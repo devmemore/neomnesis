@@ -5,12 +5,12 @@ import json
 import uuid
 from enum import Enum
 from datetime import datetime, timedelta
-from .config import NeoMnesisConfig
+from neomnesis.config import NeoMnesisConfig
 
 from typing import List, Dict
 
 APP_NAME = "task"
-TASK_TABLE = "tasks"
+TASK_TABLE = "task"
 TASK_NAMESPACE_UUID = uuid.UUID(APP_NAME)
 
 
