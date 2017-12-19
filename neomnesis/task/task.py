@@ -5,13 +5,12 @@ import json
 import uuid
 from enum import Enum
 from datetime import datetime, timedelta
-from neomnesis.config import NeoMnesisConfig
+from config import NeoMnesisConfig
 
 from typing import List, Dict
 
 APP_NAME = "task"
 TASK_TABLE = "task"
-TASK_NAMESPACE_UUID = uuid.UUID(APP_NAME)
 
 
 class Priority(Enum):
@@ -31,7 +30,7 @@ class Task:
         self.title = title
         self.priority = priority
         self.description = description
-        self._uuid = uuid.UUID(TASK_NAMESPACE_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+        self._uuid = uuid.UUID(APP_NAME, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
         self.creation_date = datetime.now()
         self.due_date = due_date
 
@@ -45,7 +44,7 @@ class Task:
         return self.title
 
     def create_uuid(self):
-        return uuid.UUID(TASK_NAMESPACE_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+        return uuid.UUID(APP_NAME, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
 
     def to_row(self):
         return self.__dict__
@@ -55,17 +54,24 @@ def has_no_modification_statement( statement : str ):
     return not any(list(map(lambda x : x in statement.upper(),['ALTER','DROP', 'INSERT', 'CREATE'])))
 
 class TaskDB:
+
     def __init__(self, cfg : NeoMnesisConfig):
         self.cfg = cfg
         self.db_file = self.cfg.get_db_filename(APP_NAME)
-        if not os.path.exists(self.db_file) :
-            tmp_df = pd.DataFrame([],columns=Task.columns)
-
+        if not os.path.dirname(os.path.dirname(self.db_file)):
+            os.makedirs(os.path.dirname(self.db_file))
         conn = sqlite3.connect(self.db_file)
         self.conn = conn
-        data_frame = pd.read_sql_query("select * from %s" % TASK_TABLE, conn)
+        if not os.path.exists(self.db_file) :
+            tmp_df = pd.DataFrame([], columns=Task.columns)
+            tmp_df.to_sql(self.db_file,conn )
 
-    def insert_task(self,title, description, priority : int, due_date : datetime = None):
+        self.data_frame = pd.read_sql_query("select * from %s" % TASK_TABLE, conn)
+
+    def insert_task(self,task):
+        self.data_frame.append(task.to_row())
+
+    def insert_task_row(self,title, description, priority : int, due_date : datetime = None):
         task = Task(title, description, priority , due_date)
         self.data_frame.append(task.to_row())
 
@@ -74,6 +80,9 @@ class TaskDB:
 
     def commit(self,):
         self.data_frame.to_sql(TASK_TABLE,self.conn, if_exists="replace")
+
+    def create_table_task_if_not_exists(self):
+        pd.read_sql_query(self.conn, )
 
     def get_task_from_select(self, select_statement):
         if has_no_modification_statement(select_statement):
