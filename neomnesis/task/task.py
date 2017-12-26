@@ -54,6 +54,7 @@ class Task:
     def to_row(self):
         return self.__dict__
 
+
 def has_no_modification_statement( statement : str ):
     return not any(list(map(lambda x : x in statement.upper(),['ALTER','DROP', 'INSERT', 'CREATE'])))
 
@@ -72,28 +73,45 @@ class TaskDB:
         tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (TASK_TABLE,sqlite_cols))
         self.conn = conn
         self.tmp_conn = tmp_conn
-        self.data_frame = pd.read_sql_query("SELECT * FROM %s" % TASK_TABLE, conn)
+        self.data_frame = pd.read_sql_query("SELECT * FROM %s" % TASK_TABLE, conn, index_col=None)
         self.data_frame.to_sql(TASK_TABLE,self.tmp_conn, if_exists="replace")
 
     def commit_to_tmp(self):
         self.data_frame.to_sql(TASK_TABLE, self.tmp_conn, if_exists="replace")
 
-    def insert_task(self,task):
+    def insert_task(self,task : Task):
         self.data_frame = self.data_frame.append(pd.DataFrame([task.to_row()],columns=list(Task.columns.keys())))
+        self.commit_to_tmp()
+
+    def insert_tasks(self, tasks : List[Task]):
+        self.data_frame = self.data_frame.append(pd.DataFrame(list(map(lambda task : task.to_row(),tasks)),columns=list(Task.columns.keys())))
+        self.commit_to_tmp()
+
+    def modify_task(self,my_uuid,field,value):
+        self.data_frame.loc[self.data_frame['_uuid'] == my_uuid,field] = value
         self.commit_to_tmp()
 
     def insert_task_row(self,title, description, priority : int, due_date : datetime = None):
         task = Task(title, description, priority , due_date)
-        self.data_frame = self.data_frame.append(pd.DataFrame(task.to_row(),columns=list(Task.columns.keys())))
+        self.data_frame = self.data_frame.append(pd.DataFrame([task.to_row()],columns=list(Task.columns.keys())))
         self.data_frame.to_sql(self.db_file, self.conn)
         self.commit_to_tmp()
 
-    def delete_task_by_uuid(self, uuid):
-        self.data_frame = self.data_frame[self.data_frame.uuid != uuid]
+    def delete_task_by_uuid(self, uuid : str):
+        self.data_frame = self.data_frame[self.data_frame._uuid != uuid]
         self.commit_to_tmp()
 
     def commit(self,):
         self.data_frame.to_sql(TASK_TABLE,self.conn, if_exists="replace")
+
+    def purge(self):
+        self.data_frame = pd.DataFrame([],columns=list(Task.columns.keys()))
+        self.commit_to_tmp()
+        self.commit()
+
+    def get_all_tasks(self):
+        return self.get_task_from_select('select * from task')
+
 
     def get_task_from_select(self, select_statement):
         if has_no_modification_statement(select_statement):
