@@ -36,7 +36,8 @@ class TaskDBUnitTest(unittest.TestCase):
         self.assertTrue(
             all(
                 task_result[columns_to_compare]
-                        == pd.DataFrame([{'title': 'do this shit',
+                        ==
+                pd.DataFrame([{'title': 'do this shit',
                                           'description' : 'don\'t procrastinate budy!',
                                           'priority' : 0,
                                           'due_date' : datetime(2017,1,1).strftime(DATETIME_FORMAT),
@@ -88,14 +89,22 @@ class TaskDBUnitTest(unittest.TestCase):
         self.deleteDBfiles()
 
     def test_consistency_over_updates(self):
-        self.deleteDBfiles()
         self.tdb.purge()
         self.setUp()
-        self.tdb.insert_task_row('hey','ho',5,datetime(2017,1,1))
+        self.tdb.insert_task_row('ha','ho',5,datetime(2017,1,1))
         self.tdb.commit()
+        self.assertEqual(self.tdb.get_all_tasks().iloc[0].title, 'ha')
+        self.tdb.insert_task_row('hey','lol',3,datetime(2017,1,12))
+        self.assertEqual(self.tdb.get_all_tasks().iloc[1].title, 'hey')
         self.setUp()
-        print(self.tdb.get_all_tasks())
+        self.assertEqual(self.tdb.get_all_tasks().shape[0], 1)
+        self.assertEqual(self.tdb.get_all_tasks().iloc[0].title, 'ha')
         self.tdb.purge()
+        self.assertEqual(self.tdb.get_all_tasks().shape[0], 0)
+        self.tdb.commit()
+        self.deleteDBfiles()
+
+
 
 
 if __name__ == '__main__' :
