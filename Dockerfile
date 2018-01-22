@@ -7,13 +7,15 @@ RUN apk add g++
 RUN apk add gcc 
 RUN apk add make 
 RUN apk add tar 
+
+WORKDIR /webservices
  
-RUN mkdir -p /usr/local/neomnsesis 
+RUN mkdir -p /webservices/neomnsesis 
 
-COPY neomnesis /usr/local/neomnesis/neomnsesis,
-COPY scripts /usr/local/neomnesis/scripts
+COPY neomnesis /webservices/neomnesis/neomnsesis,
+COPY scripts /webservices/neomnesis/scripts
 
-RUN /bin/bash /usr/local/neomnesis/scripts/launch_app_for_docker.sh
+RUN /bin/bash /webservices/neomnesis/scripts/launch_app_for_docker.sh
 
 
 
