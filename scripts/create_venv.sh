@@ -1,5 +1,4 @@
-MODE=$1
-
+MODE=local
 LOCAL_DIR=`dirname $0`
 echo "LOCAL : $LOCAL_DIR"
 cd $LOCAL_DIR
@@ -16,11 +15,11 @@ PYTHON_VERSION="3.6.3"
 PYTHON_SOURCE=Python-${PYTHON_VERSION}
 PYTHON_BIN=${PYTHON_SOURCE}/python
 if [ ! -d "${PYTHON_SOURCE}" ]; then
-wget https://www.python.org/ftp/python/${PYTHON_VERSION}/${PYTHON_SOURCE}.tgz -O $LOCAL_DIR/${PYTHON_SOURCE}.tgz
-tar xzf "${LOCAL_DIR}/${PYTHON_SOURCE}.tgz" -O "${LOCAL_DIR}/${PYTHON_SOURCE}"
+wget https://www.python.org/ftp/python/${PYTHON_VERSION}/${PYTHON_SOURCE}.tgz 
+tar xzf "${PYTHON_SOURCE}.tgz"
 echo $(ls -l $LOCAL_DIR)
 cd "$LOCAL_DIR/${PYTHON_SOURCE}"
-$LOCAL_DIR/${PYTHON_SOURCE}/configure && $LOCAL_DIR/${PYTHON_SOURCE}/make
+./configure && make
 fi
 
 VENV="$LOCAL_DIR/.env_${MODE}"
