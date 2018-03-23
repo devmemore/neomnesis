@@ -3,3 +3,4 @@ pandasql
 numpy
 neo4j-driver
 dataclasses
+flask

@@ -10,3 +10,6 @@ class NeoMnesisConfig:
 
     def get_db_filename(self, app_name):
         return self.cfg_parser.get(app_name,'db_filename')
+
+    def get_tmp_db_filename(self, app_name):
+        return self.cfg_parser.get(app_name,'tmp_db_filename')
