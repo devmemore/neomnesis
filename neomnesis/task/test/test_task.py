@@ -2,6 +2,7 @@ import sys, os
 
 
 local_dir = os.path.dirname(__file__)
+print(local_dir)
 sys.path.append(os.path.join(local_dir,'..','..'))
 sys.path.append(os.path.join(local_dir,'..'))
 

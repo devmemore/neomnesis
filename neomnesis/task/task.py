@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import sys, os, sqlite3
 import pandas as pd
 from pandasql import sqldf
@@ -10,6 +11,7 @@ from config import NeoMnesisConfig
 from typing import List, Dict
 
 APP_NAME = "task"
+APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}') 
 TASK_TABLE = "task"
 
 
@@ -22,6 +24,16 @@ class Priority(Enum):
     low = 5
     idle = 6
 
+@dataclass
+class TaskRow:
+    title : str
+    priority : Priority
+    description : str 
+    _uuid : UUID #uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+    creation_date : datetime #datetime.now()
+    due_date : datetime #due_date
+
+
 class Task:
 
     columns = ['title', 'descrition', 'priority', 'due_date', '_uuid', 'creation_date']
@@ -30,7 +42,7 @@ class Task:
         self.title = title
         self.priority = priority
         self.description = description
-        self._uuid = uuid.UUID(APP_NAME, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+        self._uuid = uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
         self.creation_date = datetime.now()
         self.due_date = due_date
 
@@ -44,7 +56,7 @@ class Task:
         return self.title
 
     def create_uuid(self):
-        return uuid.UUID(APP_NAME, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+        return uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
 
     def to_row(self):
         return self.__dict__
@@ -58,18 +70,25 @@ class TaskDB:
     def __init__(self, cfg : NeoMnesisConfig):
         self.cfg = cfg
         self.db_file = self.cfg.get_db_filename(APP_NAME)
-        if not os.path.dirname(os.path.dirname(self.db_file)):
+        if not os.path.exists(os.path.dirname(self.db_file)):
             os.makedirs(os.path.dirname(self.db_file))
         conn = sqlite3.connect(self.db_file)
         self.conn = conn
         if not os.path.exists(self.db_file) :
             tmp_df = pd.DataFrame([], columns=Task.columns)
-            tmp_df.to_sql(self.db_file,conn )
+            tmp_df.to_sql(TASK_TABLE,conn)
+        try :
+            self.data_frame = pd.read_sql_query("select * from %s" % TASK_TABLE, conn)
+        except Exception as e:
+            tmp_df = pd.DataFrame([], columns=Task.columns)
+            tmp_df.to_sql(TASK_TABLE,conn)
+            self.data_frame = pd.read_sql_query("select * from %s" % TASK_TABLE, conn)
 
-        self.data_frame = pd.read_sql_query("select * from %s" % TASK_TABLE, conn)
+            
+
 
     def insert_task(self,task):
-        self.data_frame.append(task.to_row())
+        self.data_frame.append(task.to_row(),ignore_index=True)
 
     def insert_task_row(self,title, description, priority : int, due_date : datetime = None):
         task = Task(title, description, priority , due_date)
@@ -86,7 +105,7 @@ class TaskDB:
 
     def get_task_from_select(self, select_statement):
         if has_no_modification_statement(select_statement):
-            df_result = sqldf(select_statement,[self.data_frame])
+            df_result = sqldf(select_statement,self.data_frame)
         else :
             raise Exception()
         return df_result
