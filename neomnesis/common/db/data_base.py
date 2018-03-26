@@ -94,3 +94,7 @@ class PandasSQLDB:
         else :
             raise Exception()
         return df_result
+
+    def rebase(self):
+        self.data_frame = pd.read_sql_query("select * from task", self.conn)
+        self.commit_to_tmp()

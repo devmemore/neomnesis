@@ -5,14 +5,17 @@ import pandas as pd
 import uuid
 from enum import Enum
 from datetime import datetime
+
 from neomnesis.common.config import NeoMnesisConfig
 from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
-from typing import List
 from neomnesis.common.db.data_base import PandasSQLDB
+
+from typing import List
 
 APP_NAME = "task"
 APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}') 
 TASK_TABLE = "task"
+DATETIME_FORMAT = "%Y-Ym-%d %H:%M:%M"
 
 
 
@@ -30,7 +33,7 @@ class TaskRow:
     title : str
     priority : Priority
     description : str 
-    _uuid : UUID #uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
+    _uuid : uuid.UUID #uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
     creation_date : datetime #datetime.now()
     due_date : datetime #due_date
 
@@ -39,13 +42,13 @@ class Task:
 
     columns = dict([('title',str), ('description',str), ('priority',int), ('due_date',datetime), ('_uuid',str), ('creation_date',datetime)])
 
-    def __init__(self, title, description: str, priority: int, due_date : datetime = None):
+    def __init__(self, title : str, description: str, priority: int, due_date : datetime = None):
         self.title = title
         self.priority = priority
         self.description = description
-        self._uuid = uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
-        self.creation_date = datetime.now()
-        self.due_date = due_date
+        self._uuid = str(uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())])))
+        self.creation_date = datetime.now().strftime(DATETIME_FORMAT)
+        self.due_date = due_date.strftime(DATETIME_FORMAT) if due_date is not None else ""
 
     def get_description(self):
         return self.description
@@ -134,7 +137,7 @@ class TaskDB(PandasSQLDB):
 
     def get_task_from_select(self, select_statement):
         if has_no_modification_statement(select_statement):
-            df_result = sqldf(select_statement,self.data_frame)
+            df_result = pd.read_sql_query(select_statement, self.tmp_conn)
         else :
             raise Exception()
         return df_result
