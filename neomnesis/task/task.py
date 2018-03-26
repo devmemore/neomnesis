@@ -98,46 +98,46 @@ class TaskDB(PandasSQLDB):
     def __init__(self, cfg : NeoMnesisConfig):
         PandasSQLDB.__init__(self,cfg,APP_NAME,TASK_TABLE,Task)
 
-    def insert_task(self,task : Task):
-        """
-        Inserts a task to the taskDB's dataframe object and commit the changes on the df to the tmp task table
-        :param task: a Task object
-        :return:
-        """
-        self.insert_obj(task)
+    #def insert_task(self,task : Task):
+    #    """
+    #    Inserts a task to the taskDB's dataframe object and commit the changes on the df to the tmp task table
+    #    :param task: a Task object
+    #    :return:
+    #    """
+    #    self.insert_obj(task)
 
-    def insert_tasks(self, tasks : List[Task]):
-        """Inserts several tasks and then commit
-        :param tasks: a list of Task objects
-        """
-        self.insert_objs(tasks)
+    #def insert_tasks(self, tasks : List[Task]):
+    #    """Inserts several tasks and then commit
+    #    :param tasks: a list of Task objects
+    #    """
+    #    self.insert_objs(tasks)
 
-    def modify_task(self,my_uuid,field : str,value):
-        """
-        Modifies a task of a given uuid, by setting a value for a specified field
-        :param my_uuid: the uuid of the task as a string
-        :param field: the field's name as a string
-        :param value:
-        :return: None
-        """
-        self.modify_obj(my_uuid,field,value)
+    #def modify_task(self,my_uuid,field : str,value):
+    #    """
+    #    Modifies a task of a given uuid, by setting a value for a specified field
+    #    :param my_uuid: the uuid of the task as a string
+    #    :param field: the field's name as a string
+    #    :param value:
+    #    :return: None
+    #    """
+    #    self.modify_obj(my_uuid,field,value)
 
-    def insert_task_row(self,title, description, priority : int, due_date : datetime = None):
+    def insert_row(self,title, description, priority : int, due_date : datetime = None):
         task = Task(title, description, priority , due_date)
         self.data_frame = self.data_frame.append(pd.DataFrame([task.to_row()],columns=list(Task.columns.keys())))
         self.data_frame.to_sql(self.db_file, self.conn, index=False, if_exists="replace")
         self.commit_to_tmp()
 
-    def delete_task_by_uuid(self, uuid : str):
-        self.delete_obj_by_uuid(uuid)
+    #def delete_task_by_uuid(self, uuid : str):
+    #    self.delete_obj_by_uuid(uuid)
 
 
-    def get_all_tasks(self):
-        return self.get_task_from_select('select * from task')
+    #def get_all_tasks(self):
+    #    return self.get_task_from_select('select * from task')
 
-    def get_task_from_select(self, select_statement):
-        if has_no_modification_statement(select_statement):
-            df_result = pd.read_sql_query(select_statement, self.tmp_conn)
-        else :
-            raise Exception()
-        return df_result
+    #def get_task_from_select(self, select_statement):
+    #    if has_no_modification_statement(select_statement):
+    #        df_result = pd.read_sql_query(select_statement, self.tmp_conn)
+    #    else :
+    #        raise Exception()
+    #    return df_result

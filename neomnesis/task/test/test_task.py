@@ -31,8 +31,8 @@ class TaskDBUnitTest(unittest.TestCase):
     def test_insert_row(self):
         self.setUp()
         my_task = Task('do this shit','don\'t procrastinate budy!', 0, datetime(2017,1,1))
-        self.tdb.insert_task(my_task)
-        task_result = self.tdb.get_task_from_select("select * from %s" % TASK_TABLE)
+        self.tdb.insert(my_task)
+        task_result = self.tdb.get_from_select("select * from %s" % TASK_TABLE)
         columns_to_compare = ['title', 'description', 'priority','due_date']
         self.assertTrue(
             all(
@@ -49,63 +49,63 @@ class TaskDBUnitTest(unittest.TestCase):
     def test_delete_row(self):
         self.setUp()
         tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
-        self.tdb.insert_tasks(tasks)
-        result = self.tdb.get_task_from_select("select * from task order by title desc")
+        self.tdb.insert_list(tasks)
+        result = self.tdb.get_from_select("select * from task order by title desc")
         to_delete = result.iloc[5:10]
         for my_uuid in to_delete._uuid.tolist() :
-            self.tdb.delete_task_by_uuid(my_uuid)
-        result_2 = self.tdb.get_task_from_select("select * from task")
+            self.tdb.delete_by_uuid(my_uuid)
+        result_2 = self.tdb.get_from_select("select * from task")
         self.assertEqual(result_2.title.tolist(), ['task %d'% i for i in range(5,10)])
 
     def test_modify_take(self):
         message = "let's describe it better"
         self.setUp()
         tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
-        self.tdb.insert_tasks(tasks)
-        result_title_is_like_5 = self.tdb.get_task_from_select("select * from {0} where title like 'task 5'".format(TASK_TABLE))
-        self.tdb.modify_task(result_title_is_like_5.iloc[0]._uuid, "description",message)
-        result = self.tdb.get_task_from_select("select * from task")
+        self.tdb.insert_list(tasks)
+        result_title_is_like_5 = self.tdb.get_from_select("select * from {0} where title like 'task 5'".format(TASK_TABLE))
+        self.tdb.modify(result_title_is_like_5.iloc[0]._uuid, "description",message)
+        result = self.tdb.get_from_select("select * from task")
         self.assertEqual(result[result.title == "task 5"].iloc[0].description, message)
 
     def test_commit(self):
         self.setUp()
         # CREATE 10 tasks
         tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
-        self.tdb.insert_tasks(tasks)
+        self.tdb.insert_list(tasks)
         # Commit it
         self.tdb.commit()
         # Remove one task from tmp dataframe and commit to tmp sqlite db
-        result_select =self.tdb.get_task_from_select('select _uuid from task where priority = 1')
+        result_select =self.tdb.get_from_select('select _uuid from task where priority = 1')
         muuid = result_select.iloc[0]._uuid
-        result_select =self.tdb.get_task_from_select('select * from task')
-        self.tdb.delete_task_by_uuid(muuid)
+        result_select =self.tdb.get_from_select('select * from task')
+        self.tdb.delete_by_uuid(muuid)
         # we haven't commit the delete so there must be 10 tasks if we reset it up
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 9)
+        self.assertEqual(self.tdb.get_all().shape[0], 9)
         self.tdb.rebase()
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 10)
-        self.tdb.delete_task_by_uuid(muuid)
+        self.assertEqual(self.tdb.get_all().shape[0], 10)
+        self.tdb.delete_by_uuid(muuid)
         self.tdb.commit()
         self.tdb.rebase()
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 9)
+        self.assertEqual(self.tdb.get_all().shape[0], 9)
         # let's purge
         self.tdb.purge()
         # there is then no tasks in main db
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 0)
+        self.assertEqual(self.tdb.get_all().shape[0], 0)
         self.deleteDBfiles(self.cfg)
 
     def test_consistency_over_updates(self):
         self.setUp()
         self.tdb.purge()
-        self.tdb.insert_task_row('ha','ho',5,datetime(2017,1,1))
+        self.tdb.insert_row('ha','ho',5,datetime(2017,1,1))
         self.tdb.commit()
-        self.assertEqual(self.tdb.get_all_tasks().iloc[0].title, 'ha')
-        self.tdb.insert_task_row('hey','lol',3,datetime(2017,1,12))
-        self.assertEqual(self.tdb.get_all_tasks().iloc[1].title, 'hey')
+        self.assertEqual(self.tdb.get_all().iloc[0].title, 'ha')
+        self.tdb.insert_row('hey','lol',3,datetime(2017,1,12))
+        self.assertEqual(self.tdb.get_all().iloc[1].title, 'hey')
         self.tdb.rebase()
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 1)
-        self.assertEqual(self.tdb.get_all_tasks().iloc[0].title, 'ha')
+        self.assertEqual(self.tdb.get_all().shape[0], 1)
+        self.assertEqual(self.tdb.get_all().iloc[0].title, 'ha')
         self.tdb.purge()
-        self.assertEqual(self.tdb.get_all_tasks().shape[0], 0)
+        self.assertEqual(self.tdb.get_all().shape[0], 0)
         self.tdb.commit()
         self.deleteDBfiles(self.cfg)
 

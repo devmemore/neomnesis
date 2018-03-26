@@ -1,3 +1,4 @@
+from __future__ import dataclasses
 from datetime import datetime
 import uuid
 from common.config import NeoMnesisConfig
@@ -12,6 +13,7 @@ from typing import List
 
 APP_NAME='note'
 NOTE_TABLE='notes'
+
 
 class Note:
 
@@ -31,6 +33,13 @@ class Note:
         # TODO : To implement, Lucene ?
         pass
 
+@dataclass
+class NoteRow:
+    title : str
+    content : str
+    creation_date : datetime
+    _uuid : UUID
+    last_modification_date : datetime
 
 
 class NoteDB(PandasSQLDB):

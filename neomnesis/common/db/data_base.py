@@ -2,6 +2,7 @@ import os, sqlite3
 import pandas as pd
 from neomnesis.common.config import NeoMnesisConfig
 from neomnesis.common.constant import SQLITE_TYPE_MAPPING
+from neomnesis.common.db.element import Element
 from typing import List
 
 
@@ -38,7 +39,7 @@ class PandasSQLDB:
         """
         self.data_frame.to_sql(self.table_name, self.tmp_conn, if_exists="replace")
 
-    def insert_obj(self,obj):
+    def insert(self,obj : Element):
         """
         Inserts a object to the objectDB's dataframe object and commit the changes on the df to the tmp object table
         :param object: a class_obj object
@@ -47,7 +48,7 @@ class PandasSQLDB:
         self.data_frame = self.data_frame.append(pd.DataFrame([obj.to_row()],columns=list(self.class_obj.columns.keys())))
         self.commit_to_tmp()
 
-    def insert_objs(self, obj_list : List):
+    def insert_list(self, obj_list : List[Element]):
         """Inserts several objects and then commit
         :param objects: a list of class_obj objects
         """
@@ -55,7 +56,7 @@ class PandasSQLDB:
                                                               columns=list(self.class_obj.columns.keys())))
         self.commit_to_tmp()
 
-    def modify_obj(self,my_uuid,field : str,value):
+    def modify(self,my_uuid,field : str,value):
         """
         Modifies a object of a given uuid, by setting a value for a specified field
         :param my_uuid: the uuid of the object as a string
@@ -67,7 +68,7 @@ class PandasSQLDB:
         self.commit_to_tmp()
 
 
-    def delete_obj_by_uuid(self, uuid : str):
+    def delete_by_uuid(self, uuid : str):
         self.data_frame = self.data_frame[self.data_frame._uuid != uuid]
         self.commit_to_tmp()
 
@@ -79,11 +80,11 @@ class PandasSQLDB:
         self.commit_to_tmp()
         self.commit()
 
-    def get_all_obj(self):
-        return self.get_obj_from_select('select * from {0}'.format(self.table_name))
+    def get_all(self):
+        return self.get_from_select('select * from {0}'.format(self.table_name))
 
 
-    def get_obj_from_select(self, select_statement):
+    def get_from_select(self, select_statement):
         """
         Performs a select (sql) statement on the temporary data base and returns the result
         :param select_statement:
