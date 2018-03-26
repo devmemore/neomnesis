@@ -21,14 +21,14 @@ def insert_task():
     priority = request_prop['priority']
     due_date = request_prop['due_date']
     task = Task(title,description,priority,due_date)
-    tdb.insert_task(task)
+    tdb.insert(task)
     return 'Hello, World!'
 
 
 @app.route('/delete_task',methods=['POST'])
 def delete_task():
     uuid = request['uuid']
-    tdb.delete_task_by_uuid(uuid)
+    tdb.delete_by_uuid(uuid)
 
 
 @app.route('/modify_task',methods=['POST'])
@@ -39,7 +39,7 @@ def modify_task():
     value = request['value']
     field = request['field']
     _uuid = request['uuid']
-    tdb.modify_task(_uuid,field,value)
+    tdb.modify(_uuid,field,value)
 
 
 @app.route('/select_tasks',methods=['POST'])
@@ -47,7 +47,7 @@ def select_tasks():
     if not 'select_statement':
         raise Exception()
     select_statement = request['select_statement']
-    res = tdb.get_task_from_select(select_statement)
+    res = tdb.get_from_select(select_statement)
     return res
 
 

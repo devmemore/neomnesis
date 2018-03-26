@@ -8,6 +8,7 @@ import os
 
 from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
 from neomnesis.common.db.data_base import PandasSQLDB
+from neomnesis.common.db.element import Element 
 
 from typing import List
 
@@ -61,7 +62,6 @@ class NoteDB(PandasSQLDB):
         self.data_frame = pd.read_sql_query("SELECT * FROM %s" % NOTE_TABLE, conn, index_col=None)
         self.data_frame.to_sql(NOTE_TABLE,self.tmp_conn, if_exists="replace")
 
-
     def insert_note(self, note : Note):
         """
         Inserts a note to the noteDB's dataframe object and commit the changes on the df to the tmp note table
@@ -94,7 +94,6 @@ class NoteDB(PandasSQLDB):
 
     def delete_note_by_uuid(self, uuid : str):
         self.delete_obj_by_uuid(uuid)
-
 
     def get_all_notes(self):
         return self.get_note_from_select('select * from {0}'.format(self.table_name))
