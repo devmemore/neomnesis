@@ -9,8 +9,6 @@ from typing import List
 def has_no_modification_statement( statement : str ):
     return not any(list(map(lambda x : x in statement.upper(),['ALTER','DROP', 'INSERT', 'CREATE'])))
 
-
-
 class PandasSQLDB:
 
     def __init__(self, cfg : NeoMnesisConfig, app_name : str, table_name: str, class_obj):
@@ -97,5 +95,5 @@ class PandasSQLDB:
         return df_result
 
     def rebase(self):
-        self.data_frame = pd.read_sql_query("select * from task", self.conn)
+        self.data_frame = pd.read_sql_query("select * from {0}".format(self.table_name), self.conn)
         self.commit_to_tmp()
