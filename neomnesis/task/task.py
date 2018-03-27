@@ -9,6 +9,7 @@ from datetime import datetime
 from neomnesis.common.config import NeoMnesisConfig
 from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
 from neomnesis.common.db.data_base import PandasSQLDB
+from neomnesis.common.db.element import Element
 
 from typing import List
 
@@ -38,7 +39,7 @@ class TaskRow:
     due_date : datetime #due_date
 
 
-class Task:
+class Task(Element):
 
     columns = dict([('title',str), ('description',str), ('priority',int), ('due_date',datetime), ('_uuid',str), ('creation_date',datetime)])
 
