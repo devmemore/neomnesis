@@ -39,7 +39,7 @@ class NoteRow:
     title : str
     content : str
     creation_date : datetime
-    _uuid : UUID
+    _uuid : uuid.UUID
     last_modification_date : datetime
 
 
@@ -61,48 +61,4 @@ class NoteDB(PandasSQLDB):
         self.tmp_conn = tmp_conn
         self.data_frame = pd.read_sql_query("SELECT * FROM %s" % NOTE_TABLE, conn, index_col=None)
         self.data_frame.to_sql(NOTE_TABLE,self.tmp_conn, if_exists="replace")
-
-    def insert_note(self, note : Note):
-        """
-        Inserts a note to the noteDB's dataframe object and commit the changes on the df to the tmp note table
-        :param note: a Note object
-        :return:
-        """
-        self.insert_obj(note)
-
-    def insert_notes(self, notes : List[Note]):
-        """Inserts several notes and then commit
-        :param notes: a list of Note objects
-        """
-        self.insert_objs(notes)
-
-    def modify_note(self,my_uuid,field : str,value):
-        """
-        Modifies a note of a given uuid, by setting a value for a specified field
-        :param my_uuid: the uuid of the note as a string
-        :param field: the field's name as a string
-        :param value:
-        :return: None
-        """
-        self.modify_obj(my_uuid,field,value)
-
-    def insert_note_row(self,title, content):
-        note = Note(title,content)
-        self.data_frame = self.data_frame.append(pd.DataFrame([note.to_row()],columns=list(Note.columns.keys())))
-        self.data_frame.to_sql(self.db_file, self.conn, index=False, if_exists="replace")
-        self.commit_to_tmp()
-
-    def delete_note_by_uuid(self, uuid : str):
-        self.delete_obj_by_uuid(uuid)
-
-    def get_all_notes(self):
-        return self.get_note_from_select('select * from {0}'.format(self.table_name))
-
-    def get_note_from_select(self, select_statement):
-        """
-        Performs a select (sql) statement on the temporary data base and returns the result
-        :param select_statement:
-        :return: dataframe result
-        """
-        return self.get_obj_from_select(select_statement)
 
