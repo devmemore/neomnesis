@@ -9,6 +9,7 @@ use:
 	@echo "integrationTests        Run integration tests in docker"
 	@echo "tests                   Run all tests"
 	@echo "help                    alias for use"
+	@echo "startApplication        Run the server"
 
 help: use
 	
@@ -29,3 +30,6 @@ startApplication:
 
 uninstall:
 	rm -r ~/.neomnesis
+
+run:
+	bash scripts/start_application.sh local

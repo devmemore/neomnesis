@@ -28,7 +28,7 @@ class ElementHandler:
 
     @classmethod
     def from_data(cls, data):
-        class_id = data.values['class_id']
+        class_id = data['class_id']
         return elements_mapping[class_id].from_data(data)
 
 
@@ -50,7 +50,9 @@ def perform_select_elements(class_id,select_statement):
 
 @app.route('/insert', methods=['POST'])
 def insert_element():
-    element = ElementHandler.from_data(request)
+    data = request.form
+    print(data)
+    element = ElementHandler.from_data(data)
     perform_insert_element(element)
     return 'OK'
 

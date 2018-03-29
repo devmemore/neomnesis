@@ -49,6 +49,7 @@ class CommandLineClient:
 
     def __init__(self, config_file):
         cfg = ClientConfig(config_file)
+        print(cfg.cfg_parser._sections)
         self.tmp_file = cfg.cfg_parser.get('main','tmp_file')
         self.server_url = cfg.cfg_parser.get('main','server_url')
 
@@ -59,10 +60,12 @@ class CommandLineClient:
             return tmpfile.read()
 
 if __name__ == '__main__' :
-    cmd_line_client = CommandLineClient('/home/thomas/Projects/Gits/neomnesis/configs/cmd_client_config_local.cfg')
+    cmd_line_client = CommandLineClient('/home/thomas/Work/Gits/neomnesis/configs/cmd_client_config_local.cfg')
+    
     url= cmd_line_client.server_url
     print(url)
-    OperationHelper.request_insert(url,Note.new_note("a note","something"))
+    res = OperationHelper.request_insert(url,Note.new_note("a note","something"))
+    print(res.text)
     OperationHelper.request_insert(url,Note.new_note("another note","something 2"))
     OperationHelper.request_insert(url,Note.new_note("another note","something 3"))
     res = OperationHelper.request_select_statement(url,"note","select * from notes")

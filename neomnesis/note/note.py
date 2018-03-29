@@ -42,6 +42,13 @@ class Note(Element):
 
     @classmethod
     def from_data(self, data: Dict):
+        if 'class_id' in data :
+            data_strict = data.copy()
+            data_strict.pop('class_id')
+            data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
+            data_strict['last_modification_date'] = datetime.strptime(data_strict['last_modification_date'],DATETIME_FORMAT)
+            print(data_strict)
+            return Note(**data_strict)
         return Note(**data)
 
 @dataclass
