@@ -1,16 +1,15 @@
-from dataclasses import dataclass
-import pandas as pd
 import uuid
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
-from neomnesis.common.config import NeoMnesisConfig
-from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
+import pandas as pd
+from dataclasses import dataclass
+from typing import Dict
+
+from neomnesis.common.constant import DATETIME_FORMAT
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
-from neomnesis.common.constant import DATETIME_FORMAT
-
-from typing import Dict
+from neomnesis.server.config.config import NeoMnesisConfig
 
 APP_NAME = "task"
 APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
@@ -44,11 +43,10 @@ class Task(Element):
 
     def __init__(self, title: str, description: str, priority: int, new_uuid: str, creation_date: datetime,
                  due_date: datetime = None):
-        Element.__init__(self, 'task')
+        Element.__init__(self, 'task',new_uuid)
         self.title = title
         self.priority = priority
         self.description = description
-        self._uuid = new_uuid
         self.creation_date = creation_date
         self.due_date = due_date.strftime(DATETIME_FORMAT) if due_date is not None else ""
 

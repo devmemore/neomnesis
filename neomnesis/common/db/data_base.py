@@ -1,9 +1,12 @@
-import os, sqlite3
+import os
+import sqlite3
+
 import pandas as pd
-from neomnesis.common.config import NeoMnesisConfig
+from typing import List
+
 from neomnesis.common.constant import SQLITE_TYPE_MAPPING
 from neomnesis.common.db.element import Element
-from typing import List
+from neomnesis.server.config.config import NeoMnesisConfig
 
 
 def has_no_modification_statement( statement : str ):

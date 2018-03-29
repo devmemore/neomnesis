@@ -9,7 +9,7 @@ sys.path.append(os.path.join(local_dir,'..'))
 import unittest
 from neomnesis.task.task import Task, TaskDB, TASK_TABLE, DATETIME_FORMAT
 import pandas as pd
-import neomnesis.common.config as config
+import server.config.config as config
 
 from datetime import datetime, timedelta
 

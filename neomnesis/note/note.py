@@ -1,31 +1,37 @@
-from __future__ import dataclasses
-from datetime import datetime
-import uuid
-from common.config import NeoMnesisConfig
-import sqlite3
-import pandas as pd
 import os
+import sqlite3
+import uuid
+from datetime import datetime
+from dataclasses import dataclass
+
+import pandas as pd
+from typing import Dict
 
 from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
 from neomnesis.common.db.data_base import PandasSQLDB
-from neomnesis.common.db.element import Element 
-
-from typing import List
+from neomnesis.common.db.element import Element
+from neomnesis.server.config.config import NeoMnesisConfig
 
 APP_NAME='note'
 NOTE_TABLE='notes'
 
 
-class Note:
+class Note(Element):
 
     columns = dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)])
 
-    def __init__(self, title : str, content : str):
+    def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
+        Element.__init__(self,"note",_uuid)
         self.title = title
         self.content = content
-        self.creation_date = datetime.now().strftime(DATETIME_FORMAT)
-        self._uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([self.title, self.creation_date])))
-        self.last_modification_date = datetime.now().strftime(DATETIME_FORMAT)
+        self.creation_date = creation_date.strftime(DATETIME_FORMAT)
+        self.last_modification_date = last_modification_date.strftime(DATETIME_FORMAT)
+
+    @classmethod
+    def new_note(self, title, content):
+        creation_date = datetime.now()
+        _uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([title, creation_date.strftime(DATETIME_FORMAT),str(creation_date.time().microsecond)])))
+        return Note(_uuid, title, content, creation_date, creation_date)
 
     def to_row(self):
         return self.__dict__
@@ -33,6 +39,10 @@ class Note:
     def get_tags(self):
         # TODO : To implement, Lucene ?
         pass
+
+    @classmethod
+    def from_data(self, data: Dict):
+        return Note(**data)
 
 @dataclass
 class NoteRow:
@@ -46,7 +56,7 @@ class NoteRow:
 class NoteDB(PandasSQLDB):
 
     def __init__(self, cfg : NeoMnesisConfig):
-        PandasSQLDB.__init__(cfg, APP_NAME, NOTE_TABLE, Note)
+        PandasSQLDB.__init__(self,cfg, APP_NAME, NOTE_TABLE, Note)
 
         self.db_file = self.cfg.get_db_filename(APP_NAME)
         self.tmp_db_file = self.cfg.get_tmp_db_filename(APP_NAME)

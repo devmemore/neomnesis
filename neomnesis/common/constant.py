@@ -6,3 +6,4 @@ SQLITE_TYPE_MAPPING = {str : 'text',
                        datetime : 'text'}
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DATETIME_NANO_PRECISION_FORMAT = "%Y-%m-%d %H:%M:%S %N"
