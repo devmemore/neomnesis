@@ -10,6 +10,7 @@ from neomnesis.common.constant import DATETIME_FORMAT
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
 from neomnesis.server.config.config import NeoMnesisConfig
+from werkzeug.datastructures import MultiDict
 
 APP_NAME = "task"
 APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
@@ -73,13 +74,13 @@ class Task(Element):
         return self.__dict__
 
     @classmethod
-    def from_data(self, data: Dict):
+    def from_data(self, data: MultiDict):
         if 'class_id' in data :
-            data_strict = data.copy()
+            data_strict = data.copy().to_dict()
             data_strict.pop('class_id')
             data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
             data_strict['due_date'] = datetime.strptime(data_strict['due_date'],DATETIME_FORMAT)
-            return Note(**data_strict)
+            return Task(**data_strict)
         return Task(**data)
 
 

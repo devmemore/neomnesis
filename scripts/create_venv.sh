@@ -1,8 +1,4 @@
-MODE=local
-LOCAL_DIR=`dirname $0`
-echo "LOCAL : $LOCAL_DIR"
-cd $LOCAL_DIR
-
+MODE=$1
 
 if [ ! -z ${MODE+x} ]; then
     MODE=local

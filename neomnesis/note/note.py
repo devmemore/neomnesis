@@ -11,6 +11,7 @@ from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
 from neomnesis.server.config.config import NeoMnesisConfig
+from werkzeug.datastructures import MultiDict
 
 APP_NAME='note'
 NOTE_TABLE='notes'
@@ -18,7 +19,7 @@ NOTE_TABLE='notes'
 
 class Note(Element):
 
-    columns = dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)])
+    columns = Element.columns.copy().update(dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
 
     def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
         Element.__init__(self,"note",_uuid)
@@ -41,13 +42,12 @@ class Note(Element):
         pass
 
     @classmethod
-    def from_data(self, data: Dict):
+    def from_data(self, data : MultiDict):
         if 'class_id' in data :
-            data_strict = data.copy()
+            data_strict = data.copy().to_dict()
             data_strict.pop('class_id')
             data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
             data_strict['last_modification_date'] = datetime.strptime(data_strict['last_modification_date'],DATETIME_FORMAT)
-            print(data_strict)
             return Note(**data_strict)
         return Note(**data)
 

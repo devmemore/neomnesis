@@ -17,7 +17,7 @@ env:
 ifeq ($(ENV), "")
 	$(error Usage: make <command> ENV=(local|dev|prod))
 endif
-	bash ./scripts/create_venv.sh ${ENV}
+	bash scripts/create_venv.sh ${ENV}
 
 unittest: env_local
 	./env_local/bin/python neomnesis/task/test/test_task.py

@@ -2,7 +2,7 @@ from typing import Dict
 
 class Element:
 
-    attribute_data = ['class_id','uuid']
+    columns = {'class_id' : str,'uuid' : str}
 
     def __init__(self,class_id, _uuid):
         self.class_id = class_id
