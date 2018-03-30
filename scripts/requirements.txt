@@ -4,5 +4,5 @@ neo4j-driver
 dataclasses
 flask
 requests
-cmd
 neovim
+werkzeug

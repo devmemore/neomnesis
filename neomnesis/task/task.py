@@ -15,7 +15,6 @@ from werkzeug.datastructures import MultiDict
 APP_NAME = "task"
 APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
 TASK_TABLE = "task"
-DATETIME_FORMAT = "%Y-Ym-%d %H:%M:%M"
 
 
 class Priority(Enum):
@@ -39,8 +38,8 @@ class TaskRow:
 
 
 class Task(Element):
-    columns = dict([('title', str), ('description', str), ('priority', int), ('due_date', datetime), ('_uuid', str),
-                    ('creation_date', datetime)])
+    columns = dict(Element.columns, **dict([('title', str), ('description', str), ('priority', int), ('due_date', datetime), ('_uuid', str),
+                    ('creation_date', datetime)]))
 
     def __init__(self, title: str, description: str, priority: int, new_uuid: str, creation_date: datetime,
                  due_date: datetime = None):
@@ -52,7 +51,7 @@ class Task(Element):
         self.due_date = due_date.strftime(DATETIME_FORMAT) if due_date is not None else ""
 
     @classmethod
-    def new_task(cls, title, description, priority, due_date):
+    def new(cls, title, description, priority, due_date):
         my_uuid = str(
             uuid.uuid5(APP_UUID, ' '.join([title, description, str(priority), due_date.strftime(DATETIME_FORMAT)])))
         creation_date = datetime.now()

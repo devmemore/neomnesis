@@ -19,7 +19,8 @@ NOTE_TABLE='notes'
 
 class Note(Element):
 
-    columns = Element.columns.copy().update(dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
+    columns = dict(Element.columns.copy(),**dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
+    editable = ['content']
 
     def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
         Element.__init__(self,"note",_uuid)
@@ -29,7 +30,7 @@ class Note(Element):
         self.last_modification_date = last_modification_date.strftime(DATETIME_FORMAT)
 
     @classmethod
-    def new_note(self, title, content):
+    def new(cls, title, content):
         creation_date = datetime.now()
         _uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([title, creation_date.strftime(DATETIME_FORMAT),str(creation_date.time().microsecond)])))
         return Note(_uuid, title, content, creation_date, creation_date)
