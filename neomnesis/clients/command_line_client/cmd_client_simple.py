@@ -25,26 +25,26 @@ DATA_TYPE_MAPPING = {"note" : Note, "task" : Task}
 
 class OperationHelper:
 
-    @classmethod
-    def request_modify(cls, server_url, class_id, uuid, field, value):
+    @staticmethod
+    def request_modify(server_url, class_id, uuid, field, value):
         url_command = server_url + '/modify_' + class_id
         result = requests.post(url_command, data={'_uuid' : uuid, 'field' : field, 'value' : value})
         return result
 
-    @classmethod
-    def request_insert(cls, server_url, element : Element):
+    @staticmethod
+    def request_insert(server_url, element : Element):
         url_command = server_url + '/insert'
         result = requests.post(url_command, data=element.to_row())
         return result
 
-    @classmethod
-    def request_delete(cls, server_url, class_id, uuid):
+    @staticmethod
+    def request_delete(server_url, class_id, uuid):
         url_command = server_url + '/delete_' + class_id
         result = requests.post(url_command, data={'_uuid' : uuid})
         return result
 
-    @classmethod
-    def request_select_statement(cls, server_url, class_id, select_statement):
+    @staticmethod
+    def request_select_statement(server_url, class_id, select_statement):
         url_command = server_url + '/select_' + class_id
         result = requests.post(url_command, data={'select_statement' : select_statement})
         return result
@@ -132,5 +132,4 @@ class CommandLineClient(cmd.Cmd):
 
 if __name__ == '__main__' :
     cmd_line_client = CommandLineClient(CONFIG_FILE)
-    cmd_line_client.edit()
     cmd_line_client.cmdloop()

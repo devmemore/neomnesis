@@ -30,7 +30,7 @@ class TaskDBUnitTest(unittest.TestCase):
 
     def test_insert_row(self):
         self.setUp()
-        my_task = Task('do this shit','don\'t procrastinate budy!', 0, datetime(2017,1,1))
+        my_task = Task.new('do this shit','don\'t procrastinate budy!', 0, datetime(2017,1,1))
         self.tdb.insert(my_task)
         task_result = self.tdb.get_from_select("select * from %s" % TASK_TABLE)
         columns_to_compare = ['title', 'description', 'priority','due_date']
@@ -48,7 +48,7 @@ class TaskDBUnitTest(unittest.TestCase):
 
     def test_delete_row(self):
         self.setUp()
-        tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
         self.tdb.insert_list(tasks)
         result = self.tdb.get_from_select("select * from task order by title desc")
         to_delete = result.iloc[5:10]
@@ -60,7 +60,7 @@ class TaskDBUnitTest(unittest.TestCase):
     def test_modify_take(self):
         message = "let's describe it better"
         self.setUp()
-        tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
         self.tdb.insert_list(tasks)
         result_title_is_like_5 = self.tdb.get_from_select("select * from {0} where title like 'task 5'".format(TASK_TABLE))
         self.tdb.modify(result_title_is_like_5.iloc[0]._uuid, "description",message)
@@ -70,7 +70,7 @@ class TaskDBUnitTest(unittest.TestCase):
     def test_commit(self):
         self.setUp()
         # CREATE 10 tasks
-        tasks = [Task('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
         self.tdb.insert_list(tasks)
         # Commit it
         self.tdb.commit()

@@ -93,7 +93,7 @@ class TaskDB(PandasSQLDB):
         PandasSQLDB.__init__(self, cfg, APP_NAME, TASK_TABLE, Task)
 
     def insert_row(self, title, description, priority: int, due_date: datetime = None):
-        task = Task(title, description, priority, due_date)
+        task = Task.new(title, description, priority, due_date)
         self.data_frame = self.data_frame.append(pd.DataFrame([task.to_row()], columns=list(Task.columns.keys())))
         self.data_frame.to_sql(self.db_file, self.conn, index=False, if_exists="replace")
         self.commit_to_tmp()
