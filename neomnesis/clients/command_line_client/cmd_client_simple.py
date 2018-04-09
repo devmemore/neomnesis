@@ -61,7 +61,7 @@ class ElementBuilder(cmd.Cmd):
 
     def do_field(self,field_name):
         self.current_fieldname = field_name
-        if field_name in self.data_type.editable
+        if field_name in self.data_type.editable :
             self.edit()
 
     def do_value(self,field_value):
@@ -80,11 +80,6 @@ class ElementBuilder(cmd.Cmd):
     def do_done(self):
         return self.data_type.new(**self.data_element)
 
-    def do_cancel(self):
-        pass
-
-    def do_cancel_all(self):
-        pass
 
     def get_field_type(self,field_name):
         return self.data_type.columns[field_name]
@@ -103,6 +98,9 @@ class ElementBuilder(cmd.Cmd):
         else :
             return lambda field_value : field_type(field_value)
 
+    def do_exit(self):
+        return None
+
 
 class CommandLineClient(cmd.Cmd):
 
@@ -113,21 +111,32 @@ class CommandLineClient(cmd.Cmd):
         cfg = ClientConfig(config_file)
         self.tmp_file = cfg.cfg_parser.get('main','tmp_file')
         self.server_url = cfg.cfg_parser.get('main','server_url')
+        self.operation_list = list()
 
     def do_create(self, data_type):
         if data_type == 'note' :
             elem_builder = ElementBuilder(data_type)
-            elem_builder.prompt = self.prompt[:-1] + ElementBuilder.prompt
-            print('a new note')
+            elem_builder.prompt = self.prompt[:-1] + 'create '
+            new_note = elem_builder.cmdloop()
+            print('a new note is born {0}'.format(1))
         elif data_type == 'task' :
             elem_builder = ElementBuilder(data_type)
-            elem_builder.prompt = self.prompt[:-1] + ElementBuilder.prompt
-            print('a new task')
+            elem_builder.prompt = self.prompt[:-1] + 'create ' 
+            new_note = elem_builder.cmdloop()
+            print('a new task is born {0}'.format(1))
 
     def do_query(self, select_statement):
         result = OperationHelper.request_select_statement(self.server_url, select_statement)
         print(result)
 
+    def do_cancel(self):
+        pass
+
+    def do_cancel_all(self):
+        pass
+
+    def do_exit(self):
+        return True
 
 
 if __name__ == '__main__' :
