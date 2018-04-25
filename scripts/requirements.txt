@@ -6,3 +6,5 @@ flask
 requests
 neovim
 werkzeug
+networkx
+
