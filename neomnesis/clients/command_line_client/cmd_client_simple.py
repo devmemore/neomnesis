@@ -1,11 +1,11 @@
 import os, sys
 
 sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.join(os.path.dirname(__file__),'..','..','..'))
-
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 import requests
 import cmd
+import os
 from datetime import datetime
 from neomnesis.common.db.element import Element
 from neomnesis.clients.config.client_config import ClientConfig
@@ -16,11 +16,10 @@ from subprocess import call
 from neovim import attach
 import neovim
 
-
 LOCAL_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(LOCAL_DIR, 'cmd_client_config_local.cfg')
 
-DATA_TYPE_MAPPING = {"note" : Note, "task" : Task}
+DATA_TYPE_MAPPING = {"note": Note, "task": Task}
 
 
 class OperationHelper:
@@ -28,11 +27,11 @@ class OperationHelper:
     @staticmethod
     def request_modify(server_url, class_id, uuid, field, value):
         url_command = server_url + '/modify_' + class_id
-        result = requests.post(url_command, data={'_uuid' : uuid, 'field' : field, 'value' : value})
+        result = requests.post(url_command, data={'_uuid': uuid, 'field': field, 'value': value})
         return result
 
     @staticmethod
-    def request_insert(server_url, element : Element):
+    def request_insert(server_url, element: Element):
         url_command = server_url + '/insert'
         result = requests.post(url_command, data=element.to_row())
         return result
@@ -40,37 +39,39 @@ class OperationHelper:
     @staticmethod
     def request_delete(server_url, class_id, uuid):
         url_command = server_url + '/delete_' + class_id
-        result = requests.post(url_command, data={'_uuid' : uuid})
+        result = requests.post(url_command, data={'_uuid': uuid})
         return result
 
     @staticmethod
     def request_select_statement(server_url, class_id, select_statement):
         url_command = server_url + '/select_' + class_id
-        result = requests.post(url_command, data={'select_statement' : select_statement})
+        result = requests.post(url_command, data={'select_statement': select_statement})
         return result
 
 
 class ElementBuilder(cmd.Cmd):
 
-    def __init__(self, data_type):
+    def __init__(self, data_type, tmp_file, socket_url):
         cmd.Cmd.__init__(self)
         self.data_type = DATA_TYPE_MAPPING[data_type]
         self.data_element = dict()
+        self.tmp_file = tmp_file
+        self.socket_url = socket_url
         self.current_fieldname = None
         self.current_fieldtype = None
 
-    def do_field(self,field_name):
+    def do_field(self, field_name):
         self.current_fieldname = field_name
-        if field_name in self.data_type.editable :
+        if field_name in self.data_type.editable:
             self.edit()
 
-    def do_value(self,field_value):
+    def do_value(self, field_value):
         # TODO: implement custom exception for client
-        try :
+        try:
             field_type_parser = self.get_field_type(self.current_fieldname)
         except Exception as e:
             raise Exception(e)
-        try :
+        try:
             self.data_element[self.current_fieldname] = field_type_parser(field_value)
         except Exception as e:
             raise Exception(e)
@@ -80,23 +81,36 @@ class ElementBuilder(cmd.Cmd):
     def do_done(self):
         return self.data_type.new(**self.data_element)
 
-
-    def get_field_type(self,field_name):
+    def get_field_type(self, field_name):
         return self.data_type.columns[field_name]
 
-    def edit(self):
-        #nvim = attach('child', argv=["/bin/env", "nvim", "--embed"])
-        r = call(['nvim',self.tmp_file],shell=True)
-        with open(self.tmp_file,'r') as tmpfile :
+    def edit(self, nothing):
+        # nvim = attach('child', argv=["/bin/env", "nvim", "--embed"])
+        r = call(['nvim', self.tmp_file], shell=True)
+        with open(self.tmp_file, 'r') as tmpfile:
             return tmpfile.read()
 
-    def define_field(self,field_type):
-        if field_type == datetime :
-            return lambda str_date : datetime.strptime(str_date, DATETIME_FORMAT)
-        elif field_type in [int,str,float]:
-            return lambda field_value : field_type(field_value)
-        else :
-            return lambda field_value : field_type(field_value)
+    def do_edit_all(self, unused):
+        # nvim = attach('child', argv=["/usr/bin/env", "nvim"])
+        os.environ['NVIM_LISTEN_ADDRESS'] = self.socket_url
+        print(os.path.dirname(self.tmp_file))
+        print(self.socket_url)
+        if not os.path.isdir(os.path.dirname(self.tmp_file)):
+            os.makedirs(os.path.dirname(self.tmp_file))
+        call(['gnome-terminal -e nvim {0} '.format(self.tmp_file, self.socket_url)], shell=True)
+        nvim = attach('socket', path=self.socket_url)
+        buffer_vim = nvim.current.buffer
+        buffer_vim[0] = 'Hello BITCH'
+        # with open(self.tmp_file,'r') as tmpfile :
+        #    return tmpfile.read()
+
+    def define_field(self, field_type):
+        if field_type == datetime:
+            return lambda str_date: datetime.strptime(str_date, DATETIME_FORMAT)
+        elif field_type in [int, str, float]:
+            return lambda field_value: field_type(field_value)
+        else:
+            return lambda field_value: field_type(field_value)
 
     def do_exit(self):
         return None
@@ -109,21 +123,19 @@ class CommandLineClient(cmd.Cmd):
         self.intro = "Welcome to Neomnesis commandline client"
         self.prompt = "neomnesis_£ "
         cfg = ClientConfig(config_file)
-        self.tmp_file = cfg.cfg_parser.get('main','tmp_file')
-        self.server_url = cfg.cfg_parser.get('main','server_url')
+        self.tmp_file = cfg.cfg_parser.get('main', 'tmp_file')
+        self.server_url = cfg.cfg_parser.get('main', 'server_url')
+        self.socket_url = cfg.cfg_parser.get('main', 'NVIM_LISTEN_ADDRESS')
         self.operation_list = list()
 
     def do_create(self, data_type):
-        if data_type == 'note' :
-            elem_builder = ElementBuilder(data_type)
+        if data_type in ['note', 'task']:
+            elem_builder = ElementBuilder(data_type, self.tmp_file, self.socket_url)
             elem_builder.prompt = self.prompt[:-1] + 'create '
             new_note = elem_builder.cmdloop()
-            print('a new note is born {0}'.format(1))
-        elif data_type == 'task' :
-            elem_builder = ElementBuilder(data_type)
-            elem_builder.prompt = self.prompt[:-1] + 'create ' 
-            new_note = elem_builder.cmdloop()
-            print('a new task is born {0}'.format(1))
+            print('a new {0} is born'.format(data_type))
+        else:
+            print('/!\ Unknown data type {0}'.format(data_type))
 
     def do_query(self, select_statement):
         result = OperationHelper.request_select_statement(self.server_url, select_statement)
@@ -139,6 +151,6 @@ class CommandLineClient(cmd.Cmd):
         return True
 
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     cmd_line_client = CommandLineClient(CONFIG_FILE)
     cmd_line_client.cmdloop()
