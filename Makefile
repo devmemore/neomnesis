@@ -23,6 +23,9 @@ endif
 unittest: env_local
 	./env_local/bin/python neomnesis/task/test/test_task.py
 
+test:
+	./env_local/bin/tox
+
 createDocker:
 	docker build .
 
@@ -41,8 +44,15 @@ endif
 uninstall:
 	rm -r ~/.neomnesis
 
-run:
+runLocal:
 ifeq ($(ENV), "")
 	$(error Usage: make <command> ENV=(local|dev|prod))
 endif
 	bash scripts/start_application.sh local
+
+
+runDocker:
+ifeq ($(ENV), "")
+	$(error Usage: make <command> ENV=(local|dev|prod))
+endif
+	bash  
