@@ -23,7 +23,7 @@ endif
 unittest: env_local
 	./env_local/bin/python neomnesis/task/test/test_task.py
 
-test:
+test: env_local
 	./env_local/bin/tox
 
 createDocker:

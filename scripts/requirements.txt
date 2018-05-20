@@ -8,3 +8,4 @@ neovim
 werkzeug
 networkx
 tox
+pytest
