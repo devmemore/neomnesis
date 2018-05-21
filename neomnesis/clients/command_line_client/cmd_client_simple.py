@@ -7,6 +7,7 @@ import neovim
 import tempfile
 import psutil
 import time
+import pandas as pd
 
 from datetime import datetime
 from neomnesis.common.db.element import Element
@@ -68,8 +69,12 @@ class ElementModifier(cmd.Cmd):
     def __init__(self, data_type, tmp_files, _uuid):
         cmd.Cmd.__init__(self)
         self.data_type = DATA_TYPE_MAPPING[data_type]
-        request_result = OperationHelper.request_select_statement(self.server_url, QUERY_TEMPLATE.format(self.data_type, self._uuid))
-        self.past_data_element = request_result.iloc[0] 
+        request_json_result = OperationHelper.request_select_statement(self.server_url, QUERY_TEMPLATE.format(self.data_type, self._uuid))
+        df_request_result = pd.read_json(request_result) 
+        if df_request_result.shape[0] != 1 :
+            print("number of rows : {0} for uuid {1}".format(df_request_result.shape[0]),
+                                                             _uuid)
+        self.past_data_element = 
         self.current_data_element = self.past_data_element 
         self.tmp_files = tmp_files
         self._uuid = _uuid
@@ -213,7 +218,8 @@ class CommandLineClient(cmd.Cmd):
             print("Known data types are "+' '.join(['note','task']))
 
     def do_query(self, select_statement):
-        result = OperationHelper.request_select_statement(self.server_url, select_statement)
+        result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
+        result = pd.read_json(result_json)
         print(result)
 
     def do_cancel(self):

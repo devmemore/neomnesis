@@ -80,7 +80,7 @@ def modify_element(class_id):
 def select_elements(class_id):
     select_statement = request.form['select_statement']
     res = perform_select_elements(class_id,select_statement)
-    return str(res)
+    return res.to_json()
 
 
 @app.route('/commit', methods=['POST'])
