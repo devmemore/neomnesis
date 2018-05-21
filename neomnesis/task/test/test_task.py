@@ -1,15 +1,15 @@
 import os
 import sys
+import unittest
+import pandas as pd
 
 local_dir = os.path.dirname(__file__)
-sys.path.append(os.path.join(local_dir,'..','..','..'))
-sys.path.append(os.path.join(local_dir,'..','..'))
-sys.path.append(os.path.join(local_dir,'..'))
+#sys.path.append(os.path.join(local_dir,'..','..','..'))
+#sys.path.append(os.path.join(local_dir,'..','..'))
+#sys.path.append(os.path.join(local_dir,'..'))
 
-import unittest
 from neomnesis.task.task import Task, TaskDB, TASK_TABLE, DATETIME_FORMAT
-import pandas as pd
-import server.config.config as config
+import neomnesis.server.config.config as config
 
 from datetime import datetime, timedelta
 

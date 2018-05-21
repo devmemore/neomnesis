@@ -21,7 +21,8 @@ endif
 	bash scripts/create_venv.sh ${ENV}
 
 unittest: env_local
-	./env_local/bin/python neomnesis/task/test/test_task.py
+	./env_local/bin/python -m unittest neomnesis/task/test/test_task.py
+	./env_local/bin/python -m unittest neomnesis/common/data_type/test/test_data_type.py
 
 test: env_local
 	./env_local/bin/tox

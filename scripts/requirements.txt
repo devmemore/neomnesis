@@ -9,3 +9,4 @@ werkzeug
 networkx
 tox
 pytest
+psutil

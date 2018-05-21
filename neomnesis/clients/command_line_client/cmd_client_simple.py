@@ -1,21 +1,21 @@
 import os, sys
-
-sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-
 import requests
 import cmd
 import os
+from subprocess import call
+from neovim import attach
+import neovim
+import tempfile
+import psutil
+import time
+
 from datetime import datetime
 from neomnesis.common.db.element import Element
 from neomnesis.clients.config.client_config import ClientConfig
 from neomnesis.task.task import Task
 from neomnesis.note.note import Note
 from neomnesis.common.constant import DATETIME_FORMAT
-from subprocess import call
-from neovim import attach
-import neovim
-import tempfile
+
 
 LOCAL_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(LOCAL_DIR, 'cmd_client_config_local.cfg')
@@ -49,6 +49,19 @@ class OperationHelper:
         result = requests.post(url_command, data={'select_statement': select_statement})
         return result
 
+def get_editor_pid(starting_time):
+    nvim_candidate_processes = list(filter(lambda process : 
+        'nvim' in process.name() and \
+        process.create_time() >= starting_time and \
+        process.parent().name() == 'gnome-terminal-server',
+            psutil.process_iter()))
+    if len(nvim_candidate_processes) == 1 :
+        nvim_process = nvim_candidate_processes[0]
+    elif len(nvim_candidate_processes) == 0 :
+        nvim_process = None
+    else :
+        nvim_process = sorted(nvim_candidate_processes,key=lambda p : p.create_time())
+    return nvim_process
 
 class ElementBuilder(cmd.Cmd):
 
@@ -95,7 +108,7 @@ class ElementBuilder(cmd.Cmd):
         with open(filepath,'r') as f :
             lines = f.read().splitlines()
             splitted_lines = map(lambda line : line.split('\t'), lines)
-            splitted_lines = map(lambda line : (line[0],self.data_type[line[0]](line[1])), splitted_lines)
+            splitted_lines = map(lambda line : (line[0],self.data_type.columns[line[0]](lines[1])), splitted_lines)
             dictified_data = dict(list(splitted_lines))  
             element = self.data_type.from_data(dictified_data)
             return element
@@ -107,16 +120,21 @@ class ElementBuilder(cmd.Cmd):
                 self.data_type.columns.keys())))
             f.write(field_initializer)
             f.close()
+    
 
     def do_edit_all(self, unused):
+        print(unused)
         # nvim = attach('child', argv=["/usr/bin/env", "nvim"])
-        os.environ['NVIM_LISTEN_ADDRESS'] = self.socket_url
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
 
         tmp_file = tempfile.NamedTemporaryFile(prefix='tmp_element_building',dir=self.tmp_files,delete=False)
         self.initialize_element_file(tmp_file.name)
-        call(['gnome-terminal --full-screen -e nvim --listen {1} {0}'.format(tmp_file, self.socket_url)], shell=True)
+        #call(['gnome-terminal --full-screen -x nvim --listen {1} {0}'.format(tmp_file, self.socket_url)], shell=True)
+        current_time = time.time()
+        os.system('gnome-terminal --full-screen -x nvim --listen {1} {0}'.format(tmp_file, self.socket_url))
+        nvim_process = get_editor_pid(current_time)
+        psutil.wait()
         element = self.from_file_to_element(tmp_file.name)
         print(element.__dict___)
         # with open(self.tmp_file,'r') as tmpfile :
@@ -139,7 +157,7 @@ class CommandLineClient(cmd.Cmd):
     def __init__(self, config_file):
         cmd.Cmd.__init__(self)
         self.intro = "Welcome to Neomnesis commandline client"
-        self.prompt = "neomnesis_£ "
+        self.prompt = "neomnesis_"+'\u039E'
         cfg = ClientConfig(config_file)
         self.server_url = cfg.cfg_parser.get('main', 'server_url')
         self.socket_url = cfg.cfg_parser.get('main', 'NVIM_LISTEN_ADDRESS')

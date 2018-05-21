@@ -14,4 +14,8 @@ class TestDataType(unittest.TestCase):
         date2 = Date("2018-05-01")
         self.assertTrue(date1 < date2)
 
+    def test_datehour(self):
+        date1 = DateHour("2017-05-01 02")
+        date2 = DateHour("2017-05-01 13")
+        self.assertTrue(date1 < date2)
 

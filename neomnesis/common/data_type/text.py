@@ -1,4 +1,4 @@
 class Text(str):
 
-    def __init__(self,text):
-        str.__init__(self) 
+    def __new__(cls,text):
+        return super().__new__(cls,text)

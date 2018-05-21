@@ -10,6 +10,7 @@ from typing import Dict
 from neomnesis.common.constant import DATETIME_FORMAT, SQLITE_TYPE_MAPPING
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
+from neomnesis.common.data_type.text import Text
 from neomnesis.server.config.config import NeoMnesisConfig
 from werkzeug.datastructures import MultiDict
 
@@ -19,8 +20,7 @@ NOTE_TABLE='notes'
 
 class Note(Element):
 
-    columns = dict(Element.columns.copy(),**dict([('title',str), ('content',str), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
-    editable = ['content']
+    columns = dict(Element.columns.copy(),**dict([('title',str), ('content',Text), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
 
     def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
         Element.__init__(self,"note",_uuid)
