@@ -15,3 +15,12 @@ class DateHour(datetime):
         mdatehour = datetime.strptime(str_datehour,cls.date_format)
         instance = super().__new__(cls,mdatehour.year,mdatehour.month,mdatehour.day, mdatehour.hour)
         return instance
+
+
+class DateTime(datetime):
+    date_format="%Y-%m-%d %H:%M:%S"
+
+    def __new__(cls, str_datehour):
+        mdatehour = datetime.strptime(str_datehour,cls.date_format)
+        instance = super().__new__(cls,mdatehour.year,mdatehour.month,mdatehour.day, mdatehour.hour)
+        return instance

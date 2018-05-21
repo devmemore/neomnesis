@@ -38,7 +38,7 @@ class TaskRow:
 
 
 class Task(Element):
-    on_creation_columns = dict([('_uuid', str), ('creation_date', datetime)])
+    on_creation_columns = dict([('creation_date', datetime)],**Element.on_creation_columns)
     columns = dict(Element.columns, **dict([('title', str), ('description', str), ('priority', int), ('due_date', datetime)], **on_creation_columns))
     
 

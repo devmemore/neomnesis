@@ -18,9 +18,9 @@ APP_NAME='note'
 NOTE_TABLE='notes'
 
 
-class Note(Element):
-
-    columns = dict(Element.columns.copy(),**dict([('title',str), ('content',Text), ('last_modification_date',datetime), ('_uuid',str), ('creation_date',datetime)]))
+class Note(Element,object):
+    on_creation_columns = dict([('creation_date', datetime),('last_modification_date', datetime)], **Element.on_creation_columns )
+    columns = dict([('title',str), ('content',Text), ], **on_creation_columns)
 
     def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
         Element.__init__(self,"note",_uuid)
@@ -50,7 +50,8 @@ class Note(Element):
             data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
             data_strict['last_modification_date'] = datetime.strptime(data_strict['last_modification_date'],DATETIME_FORMAT)
             return Note(**data_strict)
-        return Note(**data)
+        return Note.new(**data)
+    
 
 @dataclass
 class NoteRow:

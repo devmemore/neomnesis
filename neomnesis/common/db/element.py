@@ -1,8 +1,9 @@
 from typing import Dict
 
-class Element:
+class Element(object):
 
-    columns = {'class_id' : str,'uuid' : str}
+    on_creation_columns = {'class_id' : str,'_uuid' : str}
+    columns = dict(**on_creation_columns)
 
     def __init__(self,class_id, _uuid):
         self.class_id = class_id

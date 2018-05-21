@@ -87,5 +87,13 @@ def select_elements(class_id):
 def commit():
     tdb.commit()
 
+@app.route('/cancel', methods=['POST'])
+def cancel():
+    tdb.rebase()
+
+@app.route('/purge', methods=['POST'])
+def purge():
+    tdb.purge()
+
 if __name__ == '__main__' :
     app.run()
