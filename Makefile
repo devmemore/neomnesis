@@ -27,6 +27,16 @@ unittest: env_local
 test: env_local
 	./env_local/bin/tox
 
+devCmdLineClient:
+ifeq ($(ENV), "")
+	$(error Usage: make <command> ENV=(local|dev|prod))
+endif
+	mkfifo /tmp/pipe
+	bash ./scripts/start_cmd_line_client_application.sh ${ENV} < /tmp/pipe
+	echo "create note" > cmdlineclient
+	echo "edit_all" > cmdlineclient
+
+
 createDocker:
 	docker build .
 

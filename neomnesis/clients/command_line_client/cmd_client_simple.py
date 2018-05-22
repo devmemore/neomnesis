@@ -18,6 +18,8 @@ from neomnesis.common.constant import DATETIME_FORMAT
 from neomnesis.common.data_type.text import Text
 from neomnesis.clients.common.operation_helper import OperationHelper
 
+from typing import Dict
+
 
 LOCAL_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(LOCAL_DIR, 'cmd_client_config_local.cfg')
@@ -36,13 +38,14 @@ def get_editor_pid(starting_time):
     if len(nvim_candidate_processes) == 1 :
         nvim_process = nvim_candidate_processes[0]
     elif len(nvim_candidate_processes) == 0 :
+        print("no editor found")
         nvim_process = None
     else :
         nvim_process = sorted(nvim_candidate_processes,key=lambda p : p.create_time())
     return nvim_process
 
 
-def edit_in_nvim(wkdirectory, initilizer):
+def edit_in_nvim(wkdirectory, initializer):
     if not os.path.isdir(os.path.dirname(wkdirectory)):
         os.makedirs(os.path.dirname(wkdirectory))
 
@@ -56,7 +59,7 @@ def edit_in_nvim(wkdirectory, initilizer):
 
     nvim_process = get_editor_pid(current_time)
     nvim_process.wait()
-    with open(os.path.join(wkdirectory,tmp_file)) as f :
+    with open(os.path.join(wkdirectory,tmp_file.name),'r') as f :
         return f.read()
     return None 
 
@@ -66,7 +69,7 @@ class ElementModifier(cmd.Cmd):
     
     QUERY_TEMPLATE="select * from {0} where uuid = '{1}'"
 
-    def __init__(self, data_type, tmp_files, _uuid):
+    def __init__(self, data_type, tmp_files, _uuid, server_url):
         cmd.Cmd.__init__(self)
         self.data_type = DATA_TYPE_MAPPING[data_type]
         request_json_result = OperationHelper.request_select_statement(self.server_url, QUERY_TEMPLATE.format(self.data_type, self._uuid))
@@ -74,17 +77,19 @@ class ElementModifier(cmd.Cmd):
         if df_request_result.shape[0] != 1 :
             print("number of rows : {0} for uuid {1}".format(df_request_result.shape[0]),
                                                              _uuid)
-        self.past_data_element = 
+        self.past_data_element = df_request_result.iloc[0].to_dict()
         self.current_data_element = self.past_data_element 
         self.tmp_files = tmp_files
         self._uuid = _uuid
+        self.server_url = server_url
 
-    def do_done(self):
-        for colname in self.current_data_element if self.current_data_element[colname] != self.past_data_element[colname]:
-            res = OperationHelper.request_modify(self.server_url, self.data_type.class_id, _uuid, colname, self.current_data_element[colname])
-            print("modify {0} is {1}".format(colname,res))
+    def do_done(self, unused):
+        for colname in self.current_data_element :
+            if self.current_data_element[colname] != self.past_data_element[colname] :
+                res = OperationHelper.request_modify(self.server_url, self.data_type.class_id, _uuid, colname, self.current_data_element[colname])
+                print("modify {0} is {1}".format(colname,res))
 
-    def do_get_state(self):
+    def do_get_state(self,unused):
         print(self.cuurent_data_element)
 
     def do_edit_field(self, fieldname, value=None):
@@ -101,10 +106,17 @@ class ElementModifier(cmd.Cmd):
     def initialize_element_file(self, filepath):
         with open(filepath,'w') as f :
             field_initializer='\n'.join(
-                    list(map(lambda colname : colname+'\t'str(self.cuurent_data_element[colname])'\t'+'#'+str(self.data_type.columns[colname]),
-                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() ])))
+                    list(map(lambda colname : colname+'\t'+str(self.current_data_element[colname])+'\t'+'#'+str(self.data_type.columns[colname]),
+                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys()])))
             f.write(field_initializer)
             f.close()
+
+    def parse_data(self, data_str) -> Dict :
+            lines = data_str.splitlines()
+            splitted_lines = list(map(lambda line : line.split('\t'), lines))
+            splitted_lines = list(map(lambda line : (line[0],self.data_type.columns[line[0]](line[1])), splitted_lines))
+            dictified_data = dict(list(splitted_lines))
+            return dictified_data
 
     def do_edit_all(self, unused):
         print(unused)
@@ -112,8 +124,6 @@ class ElementModifier(cmd.Cmd):
             os.makedirs(os.path.dirname(self.tmp_files))
         current_time = time.time()
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
-        nvim_process = get_editor_pid(current_time)
-        nvim_process.wait()
         self.current_data_element = self.parse_data(data_str)
 
     def exit(self):
@@ -122,16 +132,21 @@ class ElementModifier(cmd.Cmd):
 
 class ElementBuilder(cmd.Cmd):
 
-    def __init__(self, data_type, tmp_files):
+    def __init__(self, data_type, tmp_files, server_url):
         cmd.Cmd.__init__(self)
         self.data_type = DATA_TYPE_MAPPING[data_type]
         self.data_element = dict()
+        self.server_url = server_url
         self.tmp_files = tmp_files
 
-    def do_done(self):
-        return self.data_type.new(**self.data_element)
+    def do_done(self, unused):
+        new_element = self.data_type.new(**self.data_element)
+        print('a new {0} is born'.format(new_element.class_id))
+        inserted = OperationHelper.request_insert(self.server_url, new_element)
+        print('insertion of {0} is {1}'.format(new_element._uuid, inserted))
+        return True 
 
-    def do_get_state():
+    def do_get_state(self,unused):
         print(self.data_element)
 
 
@@ -156,8 +171,8 @@ class ElementBuilder(cmd.Cmd):
         nvim_process.wait()
         self.data_element = self.parse_data(data_str)
 
-    def parse_data(self, data_str) -> Element :
-            data_str.splitlines()
+    def parse_data(self, data_str) -> Dict :
+            lines = data_str.splitlines()
             splitted_lines = list(map(lambda line : line.split('\t'), lines))
             splitted_lines = list(map(lambda line : (line[0],self.data_type.columns[line[0]](line[1])), splitted_lines))
             dictified_data = dict(list(splitted_lines))
@@ -176,12 +191,9 @@ class ElementBuilder(cmd.Cmd):
         # nvim = attach('child', argv=["/usr/bin/env", "nvim"])
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
-
         #call(['gnome-terminal --full-screen -x nvim --listen {1} {0}'.format(tmp_file, self.socket_url)], shell=True)
         current_time = time.time()
-        data_str = self.edit_in_nvim()
-        nvim_process = get_editor_pid(current_time)
-        nvim_process.wait()
+        data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
         self.data_element = self.parse_data(data_str)
 
     def do_exit(self):
@@ -208,11 +220,9 @@ class CommandLineClient(cmd.Cmd):
 
     def do_create(self, data_type):
         if data_type in ['note', 'task']:
-            elem_builder = ElementBuilder(data_type, self.tmp_files)
+            elem_builder = ElementBuilder(data_type, self.tmp_files, self.server_url)
             elem_builder.prompt = self.prompt[:-1] + 'create_'+ '\u039E' + " "
             new_element = elem_builder.cmdloop()
-            print('a new {0} is born'.format(data_type))
-            OperationHelper.request_insert(self.server_url, new_element)
         else:
             print('/!\ Unknown data type {0}'.format(data_type))
             print("Known data types are "+' '.join(['note','task']))
@@ -227,7 +237,7 @@ class CommandLineClient(cmd.Cmd):
 
     def do_modify(self, data_type, _uuid):
         if data_type in ['note', 'task']:
-            elem_modifier = ElemModifier(data_type, self.tmp_files, _uuid)
+            elem_modifier = ElemModifier(data_type, self.tmp_files, _uuid, self.server_url)
             elem_modifier.prompt = self.prompt[:-1] + 'modify_'+ '\u039E' + " "
             elem_modify.cmdloop()
         else:

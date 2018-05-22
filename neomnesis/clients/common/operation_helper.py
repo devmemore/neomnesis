@@ -1,4 +1,5 @@
 import requests
+from neomnesis.common.db.element import Element
 
 class OperationHelper:
 
