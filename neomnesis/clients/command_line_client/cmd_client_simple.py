@@ -229,13 +229,15 @@ class CommandLineClient(cmd.Cmd):
 
     def do_query(self, select_statement):
         result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
-        result = pd.read_json(result_json)
+        print(result_json.text)
+        result = pd.read_json(result_json.text)
         print(result)
 
-    def do_cancel(self):
+    def do_cancel(self,arg):
         OperationHelper.request_cancel(self.server_url) 
 
-    def do_modify(self, data_type, _uuid):
+    def do_modify(self,arg):
+        data_type, _uuid = arg
         if data_type in ['note', 'task']:
             elem_modifier = ElemModifier(data_type, self.tmp_files, _uuid, self.server_url)
             elem_modifier.prompt = self.prompt[:-1] + 'modify_'+ '\u039E' + " "

@@ -22,8 +22,8 @@ class OperationHelper:
         return result
 
     @staticmethod
-    def request_select_statement(server_url, class_id, select_statement):
-        url_command = server_url + '/select_' + class_id
+    def request_select_statement(server_url, select_statement):
+        url_command = server_url + '/select'
         result = requests.post(url_command, data={'select_statement': select_statement})
         return result
 
