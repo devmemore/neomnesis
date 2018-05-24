@@ -10,11 +10,12 @@ from neomnesis.common.constant import DATETIME_FORMAT
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
 from neomnesis.server.config.config import NeoMnesisConfig
+from neomnesis.common.data_type.date import DateHour
 from werkzeug.datastructures import MultiDict
 
 APP_NAME = "task"
 APP_UUID = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
-TASK_TABLE = "task"
+TASK_TABLE = "tasks"
 
 
 class Priority(Enum):
@@ -39,20 +40,20 @@ class TaskRow:
 
 class Task(Element):
     on_creation_columns = dict([('creation_date', datetime)],**Element.on_creation_columns)
-    columns = dict(Element.columns, **dict([('title', str), ('description', str), ('priority', int), ('due_date', datetime)], **on_creation_columns))
+    columns = dict(Element.columns, **dict([('title', str), ('description', str), ('priority', int), ('due_date', DateHour)], **on_creation_columns))
     
 
     def __init__(self, title: str, description: str, priority: int, new_uuid: str, creation_date: datetime,
-                 due_date: datetime = None):
+                 due_date: DateHour):
         Element.__init__(self, 'task',new_uuid)
         self.title = title
         self.priority = priority
         self.description = description
         self.creation_date = creation_date
-        self.due_date = due_date.strftime(DATETIME_FORMAT) if due_date is not None else ""
+        self.due_date = due_date
 
     @classmethod
-    def new(cls, title, description, priority, due_date):
+    def new(cls, title, description, priority, due_date : DateHour):
         my_uuid = str(
             uuid.uuid5(APP_UUID, ' '.join([title, description, str(priority), due_date.strftime(DATETIME_FORMAT)])))
         creation_date = datetime.now()
@@ -79,9 +80,9 @@ class Task(Element):
             data_strict = data.copy().to_dict()
             data_strict.pop('class_id')
             data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
-            data_strict['due_date'] = datetime.strptime(data_strict['due_date'],DATETIME_FORMAT)
+            data_strict['due_date'] = DateHour(data_strict['due_date'])
             return Task(**data_strict)
-        return Task(**data)
+        return Task.new(**data)
 
 
 def has_no_modification_statement(statement: str):

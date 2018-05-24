@@ -8,6 +8,10 @@ class Date(date):
         instance = super().__new__(cls,mdate.year,mdate.month,mdate.day)
         return instance
 
+    @classmethod
+    def from_datetime(cls, dt : datetime):
+        return Date(dt.strftime(cls.date_format))
+
 class DateHour(datetime):
     date_format="%Y-%m-%d %H"
 
@@ -15,6 +19,10 @@ class DateHour(datetime):
         mdatehour = datetime.strptime(str_datehour,cls.date_format)
         instance = super().__new__(cls,mdatehour.year,mdatehour.month,mdatehour.day, mdatehour.hour)
         return instance
+
+    @classmethod
+    def from_datetime(cls, dt : datetime):
+        return DateHour(dt.strftime(cls.date_format))
 
 
 class DateTime(datetime):
@@ -24,3 +32,7 @@ class DateTime(datetime):
         mdatehour = datetime.strptime(str_datehour,cls.date_format)
         instance = super().__new__(cls,mdatehour.year,mdatehour.month,mdatehour.day, mdatehour.hour)
         return instance
+
+    @classmethod
+    def from_datetime(cls, dt : datetime):
+        return DateTime(dt.strftime(cls.date_format))

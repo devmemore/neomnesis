@@ -8,7 +8,7 @@ local_dir = os.path.dirname(__file__)
 #sys.path.append(os.path.join(local_dir,'..','..'))
 #sys.path.append(os.path.join(local_dir,'..'))
 
-from neomnesis.task.task import Task, TaskDB, TASK_TABLE, DATETIME_FORMAT
+from neomnesis.task.task import Task, TaskDB, TASK_TABLE, DATETIME_FORMAT, DateHour
 import neomnesis.server.config.config as config
 
 from datetime import datetime, timedelta
@@ -30,7 +30,7 @@ class TaskDBUnitTest(unittest.TestCase):
 
     def test_insert_row(self):
         self.setUp()
-        my_task = Task.new('do this shit','don\'t procrastinate budy!', 0, datetime(2017,1,1))
+        my_task = Task.new('do this shit','don\'t procrastinate budy!', 0, DateHour.from_datetime(datetime(2017,1,1)))
         self.tdb.insert(my_task)
         task_result = self.tdb.get_from_select("select * from %s" % TASK_TABLE)
         columns_to_compare = ['title', 'description', 'priority','due_date']
@@ -48,36 +48,36 @@ class TaskDBUnitTest(unittest.TestCase):
 
     def test_delete_row(self):
         self.setUp()
-        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, DateHour.from_datetime(datetime(2017,1,1,5)+ timedelta(days=i))) for i in range(10)]
         self.tdb.insert_list(tasks)
-        result = self.tdb.get_from_select("select * from task order by title desc")
+        result = self.tdb.get_from_select("select * from tasks order by title desc")
         to_delete = result.iloc[5:10]
         for my_uuid in to_delete._uuid.tolist() :
             self.tdb.delete_by_uuid(my_uuid)
-        result_2 = self.tdb.get_from_select("select * from task")
+        result_2 = self.tdb.get_from_select("select * from tasks")
         self.assertEqual(result_2.title.tolist(), ['task %d'% i for i in range(5,10)])
 
     def test_modify_take(self):
         message = "let's describe it better"
         self.setUp()
-        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, DateHour.from_datetime(datetime(2017,1,1,5)+ timedelta(days=i))) for i in range(10)]
         self.tdb.insert_list(tasks)
         result_title_is_like_5 = self.tdb.get_from_select("select * from {0} where title like 'task 5'".format(TASK_TABLE))
         self.tdb.modify(result_title_is_like_5.iloc[0]._uuid, "description",message)
-        result = self.tdb.get_from_select("select * from task")
+        result = self.tdb.get_from_select("select * from tasks")
         self.assertEqual(result[result.title == "task 5"].iloc[0].description, message)
 
     def test_commit(self):
         self.setUp()
         # CREATE 10 tasks
-        tasks = [Task.new('task %d' % i,'yet another task', i, datetime(2017,1,1,5)+ timedelta(days=i)) for i in range(10)]
+        tasks = [Task.new('task %d' % i,'yet another task', i, DateHour.from_datetime(datetime(2017,1,1,5)+ timedelta(days=i))) for i in range(10)]
         self.tdb.insert_list(tasks)
         # Commit it
         self.tdb.commit()
         # Remove one task from tmp dataframe and commit to tmp sqlite db
-        result_select =self.tdb.get_from_select('select _uuid from task where priority = 1')
+        result_select =self.tdb.get_from_select('select _uuid from tasks where priority = 1')
         muuid = result_select.iloc[0]._uuid
-        result_select =self.tdb.get_from_select('select * from task')
+        result_select =self.tdb.get_from_select('select * from tasks')
         self.tdb.delete_by_uuid(muuid)
         # we haven't commit the delete so there must be 10 tasks if we reset it up
         self.assertEqual(self.tdb.get_all().shape[0], 9)

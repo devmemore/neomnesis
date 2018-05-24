@@ -30,18 +30,20 @@ DATA_TYPE_MAPPING = {"note": Note, "task": Task}
 
 
 def get_editor_pid(starting_time):
-    nvim_candidate_processes = list(filter(lambda process : 
-        'nvim' in process.name() and \
-        process.create_time() >= starting_time and \
-        process.parent().name() == 'gnome-terminal-server',
-            psutil.process_iter()))
+    #'gnome-terminal' in process.parent().name()
+    process_list = list(psutil.process_iter())
+    nvim_candidate_processes = list(filter(lambda process :
+        'nvim' == process.name(),
+            process_list))
+    print([(p.name(),p.create_time() - starting_time,p.name() == 'nvim',p.create_time() >= starting_time,
+            False if not p.parent() else ('gnome-terminal' in p.parent().name(),p.parent().name())) for p in nvim_candidate_processes])
     if len(nvim_candidate_processes) == 1 :
         nvim_process = nvim_candidate_processes[0]
     elif len(nvim_candidate_processes) == 0 :
         print("no editor found")
         nvim_process = None
     else :
-        nvim_process = sorted(nvim_candidate_processes,key=lambda p : p.create_time())
+        nvim_process = sorted(nvim_candidate_processes,key=lambda p : - p.create_time())[0]
     return nvim_process
 
 
@@ -56,7 +58,7 @@ def edit_in_nvim(wkdirectory, initializer):
     os.system('gnome-terminal --full-screen -x nvim {0}'.format(
         os.path.join(wkdirectory,tmp_file.name))
         )
-
+    time.sleep(1)
     nvim_process = get_editor_pid(current_time)
     nvim_process.wait()
     with open(os.path.join(wkdirectory,tmp_file.name),'r') as f :
@@ -72,25 +74,32 @@ class ElementModifier(cmd.Cmd):
     def __init__(self, data_type, tmp_files, _uuid, server_url):
         cmd.Cmd.__init__(self)
         self.data_type = DATA_TYPE_MAPPING[data_type]
-        request_json_result = OperationHelper.request_select_statement(self.server_url, QUERY_TEMPLATE.format(self.data_type, self._uuid))
-        df_request_result = pd.read_json(request_result) 
+        request_json_result = OperationHelper.request_select_statement(self.server_url, self.QUERY_TEMPLATE.format(self.data_type, self._uuid))
+        df_request_result = pd.read_json(request_json_result)
         if df_request_result.shape[0] != 1 :
-            print("number of rows : {0} for uuid {1}".format(df_request_result.shape[0]),
-                                                             _uuid)
+            print("number of rows : {0} for uuid {1}".format(df_request_result.shape[0], _uuid))
         self.past_data_element = df_request_result.iloc[0].to_dict()
-        self.current_data_element = self.past_data_element 
+        self.current_data_element = self.past_data_element.copy()
         self.tmp_files = tmp_files
         self._uuid = _uuid
         self.server_url = server_url
 
-    def do_done(self, unused):
+    def do_done(self, arg):
+        """
+        Element modification is finished, then update
+        :param arg:
+        :return:
+        """
+        results = list()
         for colname in self.current_data_element :
             if self.current_data_element[colname] != self.past_data_element[colname] :
-                res = OperationHelper.request_modify(self.server_url, self.data_type.class_id, _uuid, colname, self.current_data_element[colname])
+                res = OperationHelper.request_modify(self.server_url, self.data_type.class_id, self._uuid, colname, self.current_data_element[colname])
                 print("modify {0} is {1}".format(colname,res))
+                results.append(res)
+        return results
 
-    def do_get_state(self,unused):
-        print(self.cuurent_data_element)
+    def do_get_state(self, arg):
+        print(self.current_data_element)
 
     def do_edit_field(self, fieldname, value=None):
         if fieldname in self.data_type.columns :
@@ -101,7 +110,7 @@ class ElementModifier(cmd.Cmd):
             elif value == None :
                 print("No value given and field is not a Text")
             else :    
-                self.data_element[fieldname] = self.data_type.columns[fieldname](value)
+                self.current_data_element[fieldname] = self.data_type.columns[fieldname](value)
 
     def initialize_element_file(self, filepath):
         with open(filepath,'w') as f :
@@ -118,11 +127,9 @@ class ElementModifier(cmd.Cmd):
             dictified_data = dict(list(splitted_lines))
             return dictified_data
 
-    def do_edit_all(self, unused):
-        print(unused)
+    def do_edit_all(self, arg):
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
-        current_time = time.time()
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
         self.current_data_element = self.parse_data(data_str)
 
@@ -139,14 +146,14 @@ class ElementBuilder(cmd.Cmd):
         self.server_url = server_url
         self.tmp_files = tmp_files
 
-    def do_done(self, unused):
+    def do_done(self, arg):
         new_element = self.data_type.new(**self.data_element)
         print('a new {0} is born'.format(new_element.class_id))
         inserted = OperationHelper.request_insert(self.server_url, new_element)
         print('insertion of {0} is {1}'.format(new_element._uuid, inserted))
         return True 
 
-    def do_get_state(self,unused):
+    def do_get_state(self,arg):
         print(self.data_element)
 
 
@@ -161,14 +168,10 @@ class ElementBuilder(cmd.Cmd):
             else :    
                 self.data_element[fieldname] = self.data_type.columns[fieldname](value)
           
-    def do_edit_all(self, unused):
-        print(unused)
+    def do_edit_all(self, arg):
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
-        current_time = time.time()
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
-        nvim_process = get_editor_pid(current_time)
-        nvim_process.wait()
         self.data_element = self.parse_data(data_str)
 
     def parse_data(self, data_str) -> Dict :
@@ -185,16 +188,6 @@ class ElementBuilder(cmd.Cmd):
                 [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() ])))
             f.write(field_initializer)
             f.close()
-
-    def do_edit_all(self, unused):
-        print(unused)
-        # nvim = attach('child', argv=["/usr/bin/env", "nvim"])
-        if not os.path.isdir(os.path.dirname(self.tmp_files)):
-            os.makedirs(os.path.dirname(self.tmp_files))
-        #call(['gnome-terminal --full-screen -x nvim --listen {1} {0}'.format(tmp_file, self.socket_url)], shell=True)
-        current_time = time.time()
-        data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
-        self.data_element = self.parse_data(data_str)
 
     def do_exit(self):
         return None
@@ -222,7 +215,7 @@ class CommandLineClient(cmd.Cmd):
         if data_type in ['note', 'task']:
             elem_builder = ElementBuilder(data_type, self.tmp_files, self.server_url)
             elem_builder.prompt = self.prompt[:-1] + 'create_'+ '\u039E' + " "
-            new_element = elem_builder.cmdloop()
+            res = elem_builder.cmdloop()
         else:
             print('/!\ Unknown data type {0}'.format(data_type))
             print("Known data types are "+' '.join(['note','task']))
@@ -239,17 +232,17 @@ class CommandLineClient(cmd.Cmd):
     def do_modify(self,arg):
         data_type, _uuid = arg
         if data_type in ['note', 'task']:
-            elem_modifier = ElemModifier(data_type, self.tmp_files, _uuid, self.server_url)
+            elem_modifier = ElementModifier(data_type, self.tmp_files, _uuid, self.server_url)
             elem_modifier.prompt = self.prompt[:-1] + 'modify_'+ '\u039E' + " "
-            elem_modify.cmdloop()
+            elem_modifier.cmdloop()
         else:
             print('/!\ Unknown data type {0}'.format(data_type))
             print("Known data types are "+' '.join(['note','task']))
 
-    def do_commit(self):
+    def do_commit(self, arg):
         OperationHelper.request_commit(self.server_url) 
 
-    def do_purge(self):
+    def do_purge(self, arg):
         answer = None
         while answer not in ["Y","n"] :
             answer = input("Are you sure you want to purge everything ? Y/n")
@@ -258,11 +251,11 @@ class CommandLineClient(cmd.Cmd):
         else :
             OperationHelper.request_purge(self.server_url) 
 
-    def do_cancel_all(self):
+    def do_cancel_all(self, arg):
         OperationHelper.request_cancel(self.server_url) 
         pass
 
-    def do_exit(self):
+    def do_exit(self, arg):
         return True
 
 

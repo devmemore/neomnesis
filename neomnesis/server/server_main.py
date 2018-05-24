@@ -33,11 +33,13 @@ class ElementHandler:
         return elements_mapping[class_id].from_data(data)
 
 def parse_db_type(select_statement):
-    pattern = "from [{0}]$".format('|'.join(list(sub_db.keys())))
+    #TODO : Make it better
+    pattern = "({0})".format('|'.join(map(lambda k : k+"s",list(sub_db.keys()))))
     pattern = re.compile(pattern)
-    match = re.findall(pattern,select_statement)  
-    print(match)
-    return match[0].replace("from ","")
+    match = re.findall(pattern,select_statement)
+    if len(match) != 0:
+        return match[0][:-1]
+    return None
 
 
 def perform_insert_element(element: Element):
@@ -53,14 +55,18 @@ def perform_modify_field_element(uuid: str, class_id: str, field, value):
 
 
 def perform_select_elements(select_statement):
-    class_id = parse_db_type(select_statement)
-    return sub_db[class_id].get_from_select(select_statement)
-
+    try :
+        class_id = parse_db_type(select_statement)
+        result = sub_db[class_id].get_from_select(select_statement)
+        print(result)
+        return result
+    except Exception as e :
+        print(e)
+        return e
 
 @app.route('/insert', methods=['POST'])
 def insert_element():
     data = request.form
-    print(data)
     element = ElementHandler.from_data(data)
     perform_insert_element(element)
     return 'OK'
