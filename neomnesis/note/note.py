@@ -35,9 +35,6 @@ class Note(Element,object):
         _uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([title, creation_date.strftime(DATETIME_FORMAT),str(creation_date.time().microsecond)])))
         return Note(_uuid, title, content, creation_date, creation_date)
 
-    def to_row(self):
-        return self.__dict__
-
     def get_tags(self):
         # TODO : To implement, Lucene ?
         pass
@@ -75,7 +72,9 @@ class NoteDB(PandasSQLDB):
         tmp_conn = sqlite3.connect(self.tmp_db_file)
         sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[Note.columns[col]], Note.columns)))
         conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE,sqlite_cols))
+        conn.commit()
         tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE,sqlite_cols))
+        tmp_conn.commit()
         self.conn = conn
         self.tmp_conn = tmp_conn
         self.data_frame = pd.read_sql_query("SELECT * FROM %s" % NOTE_TABLE, conn, index_col=None)

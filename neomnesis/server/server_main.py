@@ -58,10 +58,8 @@ def perform_select_elements(select_statement):
     try :
         class_id = parse_db_type(select_statement)
         result = sub_db[class_id].get_from_select(select_statement)
-        print(result)
         return result
     except Exception as e :
-        print(e)
         return e
 
 @app.route('/insert', methods=['POST'])
@@ -98,17 +96,22 @@ def select_elements():
     return res.to_json()
 
 
-@app.route('/commit', methods=['POST'])
-def commit():
-    tdb.commit()
+@app.route('/commit_<class_id>', methods=['POST'])
+def commit(class_id):
+    sub_db[class_id].commit()
+    return 'OK'
 
 @app.route('/cancel', methods=['POST'])
 def cancel():
     tdb.rebase()
+    ndb.rebase()
+    return 'OK'
 
 @app.route('/purge', methods=['POST'])
 def purge():
     tdb.purge()
+    ndb.purge()
+    return 'OK'
 
 if __name__ == '__main__' :
     app.run()

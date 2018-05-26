@@ -71,9 +71,6 @@ class Task(Element):
     def create_uuid(self):
         return uuid.uuid5(APP_UUID, ' '.join([self.get_title(), self.get_description(), str(self.get_description())]))
 
-    def to_row(self):
-        return self.__dict__
-
     @classmethod
     def from_data(self, data: MultiDict):
         if 'class_id' in data :

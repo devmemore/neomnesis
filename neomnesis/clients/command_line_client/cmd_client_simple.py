@@ -239,8 +239,8 @@ class CommandLineClient(cmd.Cmd):
             print('/!\ Unknown data type {0}'.format(data_type))
             print("Known data types are "+' '.join(['note','task']))
 
-    def do_commit(self, arg):
-        OperationHelper.request_commit(self.server_url) 
+    def do_commit(self, class_id):
+        OperationHelper.request_commit(self.server_url, class_id)
 
     def do_purge(self, arg):
         answer = None

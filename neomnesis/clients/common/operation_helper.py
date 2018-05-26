@@ -28,8 +28,8 @@ class OperationHelper:
         return result
 
     @staticmethod
-    def request_commit(server_url):
-        url_command = server_url + '/commit'
+    def request_commit(server_url, class_id):
+        url_command = server_url + '/commit_' + class_id
         result = requests.post(url_command)
         return result
 

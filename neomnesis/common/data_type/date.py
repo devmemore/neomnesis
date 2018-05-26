@@ -12,6 +12,9 @@ class Date(date):
     def from_datetime(cls, dt : datetime):
         return Date(dt.strftime(cls.date_format))
 
+    def to_str(self):
+        return self.strftime(self.date_format)
+
 class DateHour(datetime):
     date_format="%Y-%m-%d %H"
 
@@ -24,6 +27,8 @@ class DateHour(datetime):
     def from_datetime(cls, dt : datetime):
         return DateHour(dt.strftime(cls.date_format))
 
+    def to_str(self):
+        return self.strftime(self.date_format)
 
 class DateTime(datetime):
     date_format="%Y-%m-%d %H:%M:%S"
@@ -36,3 +41,6 @@ class DateTime(datetime):
     @classmethod
     def from_datetime(cls, dt : datetime):
         return DateTime(dt.strftime(cls.date_format))
+
+    def to_str(self):
+        return self.strftime(self.date_format)
