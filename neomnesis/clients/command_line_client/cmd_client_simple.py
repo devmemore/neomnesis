@@ -222,9 +222,8 @@ class CommandLineClient(cmd.Cmd):
 
     def do_query(self, select_statement):
         result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
-        print(result_json.text)
         result = pd.read_json(result_json.text)
-        print(result)
+        print(result.to_string())
 
     def do_cancel(self,arg):
         OperationHelper.request_cancel(self.server_url) 

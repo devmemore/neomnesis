@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask import request
+import pandas as pd
 import re
 
 from neomnesis.common.db.element import Element
@@ -60,7 +61,7 @@ def perform_select_elements(select_statement):
         result = sub_db[class_id].get_from_select(select_statement)
         return result
     except Exception as e :
-        return e
+        return pd.DataFrame([{"result" : str(e)}])
 
 @app.route('/insert', methods=['POST'])
 def insert_element():

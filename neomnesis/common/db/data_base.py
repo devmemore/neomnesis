@@ -93,10 +93,14 @@ class PandasSQLDB:
         :return: dataframe result
         """
         if has_no_modification_statement(select_statement):
-            df_result = pd.read_sql_query(select_statement,self.tmp_conn)
+            try :
+                df_result = pd.read_sql_query(select_statement,self.tmp_conn)
+                return df_result
+            except Exception as e :
+                return pd.DataFrame([{'result' : str(e)}])
         else :
-            raise Exception()
-        return df_result
+            return pd.DataFrame([{'result' : "could be malicious"}])
+
 
     def rebase(self):
         self.data_frame = pd.read_sql_query("select * from {0}".format(self.table_name), self.conn)
