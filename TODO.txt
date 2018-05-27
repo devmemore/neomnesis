@@ -1,0 +1,2 @@
+* develop and test packaging with tar archive, compress and cypher
+* take care of Text (i.e. editable in vim alone without other fields as there could be several lines) => for moth Build and Modification
