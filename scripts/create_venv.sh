@@ -21,4 +21,5 @@ fi
 
 VENV="env_${MODE}"
 ${PYTHON_BIN} -m venv ${VENV}
+${VENV}/bin/pip install --upgrade pip
 ${VENV}/bin/pip install -r scripts/requirements.txt
