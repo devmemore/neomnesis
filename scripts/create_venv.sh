@@ -6,6 +6,8 @@ fi
 
 echo $MODE
 
+LOCAL_DIR=$(dirname $(readlink -f $0))
+
 
 PYTHON_VERSION="3.6.4"
 PYTHON_SOURCE=Python-${PYTHON_VERSION}

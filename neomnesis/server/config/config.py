@@ -16,3 +16,6 @@ class NeoMnesisConfig:
 
     def get_tmp_db_filename(self, app_name):
         return str(PurePath(Path.home(), self.cfg_parser.get(app_name,'tmp_db_filename')))
+
+    def get_domain(self):
+        return self.cfg_parser.get('main','domain')
