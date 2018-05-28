@@ -8,6 +8,7 @@ import tempfile
 import psutil
 import time
 import pandas as pd
+from functools import partial
 
 from datetime import datetime
 from neomnesis.common.db.element import Element
@@ -78,7 +79,9 @@ def edit_in_nvim(wkdirectory, initializer):
         return f.read()
     return None 
 
-
+def initialize_file(content,filename):
+    with open(filename,'w') as f : 
+        f.write(content)
 
 class ElementModifier(cmd.Cmd):
     
@@ -113,12 +116,12 @@ class ElementModifier(cmd.Cmd):
     def do_get_state(self, arg):
         print(self.current_data_element)
 
-    def do_edit_field(self, fieldname, value=None):
+    def do_edit_field(self, fieldname, value):
         if fieldname in self.data_type.columns :
-            if type(self.data_type.columns[fieldname]) is Text and value == None :
-                tmp_value = edit_in_nvim(self.tmp_files)
-                if tmp_value != None :
-                    value = tmp_value
+            if type(self.data_type.columns[fieldname]) is Text :
+                tmp_value = self.current_data_element[fieldname] if fieldname in self.current_data_element else "" 
+                tmp_value = edit_in_nvim(self.tmp_files,partial(initialize_file,tmp_value))
+                self.current_data_element[fieldname] = self.data_type.columns[fieldname](tmp_value)
             elif value == None :
                 print("No value given and field is not a Text")
             else :    
@@ -128,7 +131,7 @@ class ElementModifier(cmd.Cmd):
         with open(filepath,'w') as f :
             field_initializer='\n'.join(
                     list(map(lambda colname : colname+'\t'+str(self.current_data_element[colname])+'\t'+'#'+str(self.data_type.columns[colname]),
-                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() and not self.data_type.columns[col] is Text)))
+                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() and not self.data_type.columns[col] is Text])))
             f.write(field_initializer)
             f.close()
 
@@ -145,7 +148,7 @@ class ElementModifier(cmd.Cmd):
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
         self.current_data_element.update(self.parse_data(data_str))
 
-    def exit(self):
+    def exit(self, arg):
         return None
 
 
@@ -158,24 +161,35 @@ class ElementBuilder(cmd.Cmd):
         self.server_url = server_url
         self.tmp_files = tmp_files
 
+    def do_fields(self, arg):
+        print([ col for col in self.data_type.columns if col not in self.data_type.on_creation_columns])
+
     def do_done(self, arg):
-        new_element = self.data_type.new(**self.data_element)
-        print('a new {0} is born'.format(new_element.class_id))
-        inserted = OperationHelper.request_insert(self.server_url, new_element)
-        print('insertion of {0} is {1}'.format(new_element._uuid, inserted))
-        return True 
+        try :
+            new_element = self.data_type.new(**self.data_element)
+        except Exception as e :
+            print(e)
+        else :
+            print('a new {0} is born'.format(new_element.class_id))
+            inserted = OperationHelper.request_insert(self.server_url, new_element)
+            print('insertion of {0} is {1}'.format(new_element._uuid, inserted))
+            return True 
 
     def do_get_state(self,arg):
         print(self.data_element)
 
-
-    def do_edit_field(self, fieldname, value=None):
-        if fieldname in self.data_type.columns :
-            if type(self.data_type.columns[fieldname]) is Text and value == None :
-                tmp_value = edit_in_nvim(self.tmp_files)
-                if tmp_value != None :
-                    value = tmp_value
-            elif value == None :
+    def do_edit_field(self, args):
+        print(args)
+        argsp = args.split(' ')
+        parsed_argsp = ( argsp[0],' '.join(argsp[1:]) ) if len(argsp) >= 2 else (argsp[0], None) 
+        print(parsed_argsp)
+        fieldname, value = parsed_argsp
+        if fieldname in self.data_type.columns.keys() :
+            if self.data_type.columns[fieldname] == Text :
+                tmp_value = self.data_element[fieldname] if fieldname in self.data_element else "" 
+                tmp_value = edit_in_nvim(self.tmp_files,partial(initialize_file,tmp_value))
+                self.data_element[fieldname] = self.data_type.columns[fieldname](tmp_value)
+            elif value == None or value == "":
                 print("No value given and field is not a Text")
             else :    
                 self.data_element[fieldname] = self.data_type.columns[fieldname](value)
@@ -201,7 +215,7 @@ class ElementBuilder(cmd.Cmd):
             f.write(field_initializer)
             f.close()
 
-    def do_exit(self):
+    def do_exit(self, arg):
         return None
 
 
