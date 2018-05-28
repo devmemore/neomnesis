@@ -128,7 +128,7 @@ class ElementModifier(cmd.Cmd):
         with open(filepath,'w') as f :
             field_initializer='\n'.join(
                     list(map(lambda colname : colname+'\t'+str(self.current_data_element[colname])+'\t'+'#'+str(self.data_type.columns[colname]),
-                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys()])))
+                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() and not self.data_type.columns[col] is Text)))
             f.write(field_initializer)
             f.close()
 
@@ -197,7 +197,7 @@ class ElementBuilder(cmd.Cmd):
         with open(filepath,'w') as f :
             field_initializer='\n'.join(
                     list(map(lambda colname : colname+'\t\t'+'#'+str(self.data_type.columns[colname]),
-                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() ])))
+                [col for col in self.data_type.columns.keys() if not col in self.data_type.on_creation_columns.keys() and not self.data_type.columns[col] is Text ])))
             f.write(field_initializer)
             f.close()
 
