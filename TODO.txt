@@ -1,5 +1,5 @@
 * develop and test packaging with tar archive, compress and cypher to save it, imagine a system to keep key safely
-* take care of Text (i.e. editable in vim alone without other fields as there could be several lines) => for moth Build and Modification
+* TEST : take care of Text (i.e. editable in vim alone without other fields as there could be several lines) => for moth Build and Modification
 * make a docker container that work [not urgent]
 * make a graph db to link notes and tasks
 

@@ -30,13 +30,20 @@ DATA_TYPE_MAPPING = {"note": Note, "task": Task}
 
 
 def get_editor_pid(starting_time):
+    """
+    Returns the pid of the nvim process based on the following logic :
+    1) the process is a child of gnome-terminal
+    2) the process has started close to starting_time
+    3) Take the  in case there are multiple
+    """
     #'gnome-terminal' in process.parent().name()
     process_list = list(psutil.process_iter())
     nvim_candidate_processes = list(filter(lambda process :
         'nvim' == process.name(),
             process_list))
-    print([(p.name(),p.create_time() - starting_time,p.name() == 'nvim',p.create_time() >= starting_time,
-            False if not p.parent() else ('gnome-terminal' in p.parent().name(),p.parent().name())) for p in nvim_candidate_processes])
+    #TODO : find why starting_time < p.create_time
+    #print([(p.name(),p.create_time() - starting_time,p.name() == 'nvim',p.create_time() >= starting_time,
+    #        False if not p.parent() else ('gnome-terminal' in p.parent().name(),p.parent().name())) for p in nvim_candidate_processes])
     if len(nvim_candidate_processes) == 1 :
         nvim_process = nvim_candidate_processes[0]
     elif len(nvim_candidate_processes) == 0 :
@@ -48,6 +55,12 @@ def get_editor_pid(starting_time):
 
 
 def edit_in_nvim(wkdirectory, initializer):
+    """
+    Edit all non Text and non on creation date fields using vim at the same time
+    :param working directory as a string
+    :initilizer function with a filename as an argument that initialize the file
+    with a initial text like e.g. a form (fieldname= )
+    """
     if not os.path.isdir(os.path.dirname(wkdirectory)):
         os.makedirs(os.path.dirname(wkdirectory))
 
@@ -88,7 +101,6 @@ class ElementModifier(cmd.Cmd):
         """
         Element modification is finished, then update
         :param arg:
-        :return:
         """
         results = list()
         for colname in self.current_data_element :
@@ -131,7 +143,7 @@ class ElementModifier(cmd.Cmd):
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
-        self.current_data_element = self.parse_data(data_str)
+        self.current_data_element.update(self.parse_data(data_str))
 
     def exit(self):
         return None
@@ -172,7 +184,7 @@ class ElementBuilder(cmd.Cmd):
         if not os.path.isdir(os.path.dirname(self.tmp_files)):
             os.makedirs(os.path.dirname(self.tmp_files))
         data_str = edit_in_nvim(self.tmp_files, self.initialize_element_file)
-        self.data_element = self.parse_data(data_str)
+        self.data_element.update(self.parse_data(data_str))
 
     def parse_data(self, data_str) -> Dict :
             lines = data_str.splitlines()
