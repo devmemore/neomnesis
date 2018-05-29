@@ -20,24 +20,21 @@ NOTE_TABLE='notes'
 
 class Note(Element,object):
     on_creation_columns = dict([('creation_date', datetime),('last_modification_date', datetime)], **Element.on_creation_columns )
-    columns = dict([('title',str), ('content',Text), ], **on_creation_columns)
+    columns = dict([('title',str), ('content',Text),('categories',str) ], **on_creation_columns)
 
-    def __init__(self,_uuid, title : str, content : str, creation_date : datetime, last_modification_date : datetime):
+    def __init__(self,_uuid, title : str, content : str, categories : str, creation_date : datetime, last_modification_date : datetime):
         Element.__init__(self,"note",_uuid)
         self.title = title
         self.content = content
+        self.categories = categories
         self.creation_date = creation_date.strftime(DATETIME_FORMAT)
         self.last_modification_date = last_modification_date.strftime(DATETIME_FORMAT)
 
     @classmethod
-    def new(cls, title, content):
+    def new(cls, title, content, categories):
         creation_date = datetime.now()
-        _uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([title, creation_date.strftime(DATETIME_FORMAT),str(creation_date.time().microsecond)])))
-        return Note(_uuid, title, content, creation_date, creation_date)
-
-    def get_tags(self):
-        # TODO : To implement, Lucene ?
-        pass
+        _uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, ' '.join([title, categories, creation_date.strftime(DATETIME_FORMAT),str(creation_date.time().microsecond)])))
+        return Note(_uuid, title, content, categories, creation_date, creation_date)
 
     @classmethod
     def from_data(self, data : MultiDict):
@@ -49,15 +46,6 @@ class Note(Element,object):
             return Note(**data_strict)
         return Note.new(**data)
     
-
-@dataclass
-class NoteRow:
-    title : str
-    content : str
-    creation_date : datetime
-    _uuid : uuid.UUID
-    last_modification_date : datetime
-
 
 class NoteDB(PandasSQLDB):
 
