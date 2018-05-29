@@ -1,6 +1,7 @@
 import os, sys
 import cmd
 import os
+import re
 from subprocess import call
 from neovim import attach
 import neovim
@@ -226,15 +227,37 @@ class CommandLineClient(cmd.Cmd):
         self.intro = "Welcome to Neomnesis commandline client"
         self.prompt = "neomnesis_"+'\u039E' + " "
         cfg = ClientConfig(config_file)
-        self.server_url = cfg.cfg_parser.get('main', 'server_url')
-        self.socket_url = cfg.cfg_parser.get('main', 'NVIM_LISTEN_ADDRESS')
-        self.neomnesis_folder = cfg.cfg_parser.get('main', 'neomnesis_folder')
-        self.tmp_files = os.path.join(self.neomnesis_folder,cfg.cfg_parser.get('main', 'tmp_files'))
+        self.server_url = cfg.get_server_url()
+        self.tmp_files = cfg.get_tmp_file()
         self.operation_list = list()
-        if not os.path.isdir(self.neomnesis_folder):
-            os.makedirs(self.neomnesis_folder)
         if not os.path.isdir(self.tmp_files):
             os.makedirs(self.tmp_files)
+
+    def do_beep(self, arg):
+        """
+        Make a beep with a timer
+        uses : beep 1h50m3s 3 => make three beeps in 1 hour 50 minutes and 3 seconds
+        uses : beep 1m => make one beeps in 1 minutes
+        """
+        beep_cmd = "play --no-show-progress --null --channels 1 synth {0} sine {1}".format(1,150)  
+        arg_splitted = arg.split(' ')
+        if len(arg_splitted) < 3 :
+            try :
+                duration = arg_splitted[0]
+                retry = int(arg_splitted[1]) if len(arg_splitted) == 2 else 1
+                d,h,m,s = list(map(lambda dur : re.compile("[0-9].*"+dur).findall(duration),["d","h","m","s"]))
+                d = 0 if not d else int(d[0][:-1])*24*3600
+                h = 0 if not h else int(h[0][:-1])*3600
+                m = 0 if not m else int(m[0][:-1])*60
+                s = 0 if not s else int(s[0][:-1])
+                total_sleep_time = sum([d,h,m,s])
+                cmd_to_perform = 'sleep {0} &&'.format(total_sleep_time) +'&& sleep 1 &&'.join([beep_cmd]*retry)
+                call(cmd_to_perform+" &",shell=True)
+            except Exception as e :
+                print(e)
+        else :
+            print("malformed")
+        
 
 
     def do_create(self, data_type):
