@@ -6,7 +6,7 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import Dict
 
-from neomnesis.common.constant import DATETIME_FORMAT
+from neomnesis.common.constant import DATETIME_FORMAT, DATETIME_NANO_PRECISION_FORMAT
 from neomnesis.common.db.data_base import PandasSQLDB
 from neomnesis.common.db.element import Element
 from neomnesis.server.config.config import NeoMnesisConfig
@@ -43,9 +43,9 @@ class Task(Element):
     columns = dict(Element.columns, **dict([('title', str), ('description', str), ('priority', int), ('due_date', DateHour)], **on_creation_columns))
     
 
-    def __init__(self, title: str, description: str, priority: int, new_uuid: str, creation_date: datetime,
+    def __init__(self, title: str, description: str, priority: int, _uuid: str, creation_date: datetime,
                  due_date: DateHour):
-        Element.__init__(self, 'task',new_uuid)
+        Element.__init__(self, 'task', _uuid)
         self.title = title
         self.priority = priority
         self.description = description
@@ -76,7 +76,8 @@ class Task(Element):
         if 'class_id' in data :
             data_strict = data.copy().to_dict()
             data_strict.pop('class_id')
-            data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_FORMAT)
+            print(data_strict['creation_date'])
+            data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_NANO_PRECISION_FORMAT)
             data_strict['due_date'] = DateHour(data_strict['due_date'])
             return Task(**data_strict)
         return Task.new(**data)
