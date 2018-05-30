@@ -1,6 +1,6 @@
 import os, sys
 from configparser import ConfigParser
-
+import pathlib
 
 class ClientConfig:
 
@@ -14,4 +14,4 @@ class ClientConfig:
         return self.cfg_parser.get('main','server_url')
 
     def get_tmp_file(self):
-        return self.cfg_parser.get('main','tmp_file')
+        return str(pathlib.PurePath(pathlib.Path.home(),self.cfg_parser.get('main','tmp_files')))
