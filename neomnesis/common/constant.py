@@ -27,4 +27,4 @@ def sqlite_type_convertion(data_element):
 
 
 
-DATETIME_NANO_PRECISION_FORMAT = "%Y-%m-%d %H:%M:%S %N"
+DATETIME_NANO_PRECISION_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
