@@ -81,7 +81,6 @@ def delete_element(class_id):
 @app.route('/modify_<class_id>', methods=['POST'])
 def modify_element(class_id):
     data = request.form.to_dict()
-    print(data)
     for key in ['value', 'field', '_uuid']:
         if not key in data:
             raise Exception()

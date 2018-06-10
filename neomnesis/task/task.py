@@ -76,7 +76,6 @@ class Task(Element):
         if 'class_id' in data :
             data_strict = data.copy().to_dict()
             data_strict.pop('class_id')
-            print(data_strict['creation_date'])
             data_strict['creation_date'] = datetime.strptime(data_strict['creation_date'],DATETIME_NANO_PRECISION_FORMAT)
             data_strict['due_date'] = DateHour(data_strict['due_date'])
             return Task(**data_strict)
