@@ -80,12 +80,14 @@ def delete_element(class_id):
 
 @app.route('/modify_<class_id>', methods=['POST'])
 def modify_element(class_id):
-    for key in ['value', 'field', 'uuid']:
-        if not key in request:
+    data = request.form.to_dict()
+    print(data)
+    for key in ['value', 'field', '_uuid']:
+        if not key in data:
             raise Exception()
-    value = request.form['value']
-    field = request.form['field']
-    _uuid = request.form['_uuid']
+    value = data['value']
+    field = data['field']
+    _uuid = data['_uuid']
     perform_modify_field_element(_uuid, class_id, field, value)
     return 'OK'
 

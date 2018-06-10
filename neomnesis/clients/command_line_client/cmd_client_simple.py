@@ -10,6 +10,7 @@ import psutil
 import time
 import pandas as pd
 from functools import partial
+import json
 
 from datetime import datetime
 from neomnesis.common.db.element import Element
@@ -85,21 +86,25 @@ def initialize_file(content,filename):
         f.write(content)
 
 class ElementModifier(cmd.Cmd):
-    
-    QUERY_TEMPLATE="select * from {0} where uuid = '{1}'"
+    QUERY_TEMPLATE="select * from {0}s where _uuid = '{1}'"
 
     def __init__(self, data_type, tmp_files, _uuid, server_url):
         cmd.Cmd.__init__(self)
+        if not data_type in DATA_TYPE_MAPPING.keys():
+            print("data_type must be in {0}".format(list(DATA_TYPE_MAPPING.keys())))
+            return None
+        self.class_id = data_type
         self.data_type = DATA_TYPE_MAPPING[data_type]
-        request_json_result = OperationHelper.request_select_statement(self.server_url, self.QUERY_TEMPLATE.format(self.data_type, self._uuid))
-        df_request_result = pd.read_json(request_json_result)
+        self._uuid = _uuid
+        self.server_url = server_url
+        request_json_result = OperationHelper.request_select_statement(self.server_url, self.QUERY_TEMPLATE.format(data_type, self._uuid))
+        request_json_result = json.loads(request_json_result.text)
+        df_request_result = pd.DataFrame(request_json_result)
         if df_request_result.shape[0] != 1 :
             print("number of rows : {0} for uuid {1}".format(df_request_result.shape[0], _uuid))
         self.past_data_element = df_request_result.iloc[0].to_dict()
         self.current_data_element = self.past_data_element.copy()
         self.tmp_files = tmp_files
-        self._uuid = _uuid
-        self.server_url = server_url
 
     def do_done(self, arg):
         """
@@ -107,23 +112,27 @@ class ElementModifier(cmd.Cmd):
         :param arg:
         """
         results = list()
-        for colname in self.current_data_element :
+        for colname in filter(lambda colname : colname not in self.data_type.on_creation_columns, self.current_data_element):
             if self.current_data_element[colname] != self.past_data_element[colname] :
-                res = OperationHelper.request_modify(self.server_url, self.data_type.class_id, self._uuid, colname, self.current_data_element[colname])
+                res = OperationHelper.request_modify(self.server_url, self.class_id, self._uuid, colname, self.current_data_element[colname])
                 print("modify {0} is {1}".format(colname,res))
                 results.append(res)
-        return results
+        return True 
 
     def do_get_state(self, arg):
         print(self.current_data_element)
 
-    def do_edit_field(self, fieldname, value):
+    def do_edit_field(self, args):
+        argsp = args.split(' ')
+        parsed_argsp = ( argsp[0],' '.join(argsp[1:]) ) if len(argsp) >= 2 else (argsp[0], None) 
+        fieldname, value = parsed_argsp
         if fieldname in self.data_type.columns :
-            if type(self.data_type.columns[fieldname]) is Text :
+            if self.data_type.columns[fieldname] == Text :
                 tmp_value = self.current_data_element[fieldname] if fieldname in self.current_data_element else "" 
                 tmp_value = edit_in_nvim(self.tmp_files,partial(initialize_file,tmp_value))
+                print(tmp_value)
                 self.current_data_element[fieldname] = self.data_type.columns[fieldname](tmp_value)
-            elif value == None :
+            elif value == None or value == "": 
                 print("No value given and field is not a Text")
             else :    
                 self.current_data_element[fieldname] = self.data_type.columns[fieldname](value)
@@ -180,10 +189,8 @@ class ElementBuilder(cmd.Cmd):
         print(self.data_element)
 
     def do_edit_field(self, args):
-        print(args)
         argsp = args.split(' ')
         parsed_argsp = ( argsp[0],' '.join(argsp[1:]) ) if len(argsp) >= 2 else (argsp[0], None) 
-        print(parsed_argsp)
         fieldname, value = parsed_argsp
         if fieldname in self.data_type.columns.keys() :
             if self.data_type.columns[fieldname] == Text :
@@ -261,6 +268,10 @@ class CommandLineClient(cmd.Cmd):
 
 
     def do_create(self, data_type):
+        """
+        starts a "create" command shell interface, usage:
+        create <class_id> 
+        """
         if data_type in ['note', 'task']:
             elem_builder = ElementBuilder(data_type, self.tmp_files, self.server_url)
             elem_builder.prompt = self.prompt[:-1] + 'create_'+ '\u039E' + " "
@@ -270,15 +281,30 @@ class CommandLineClient(cmd.Cmd):
             print("Known data types are "+' '.join(['note','task']))
 
     def do_query(self, select_statement):
+        """
+        performs a query using sql query statement
+        
+        """
         result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
         result = pd.read_json(result_json.text)
         print(result.to_string())
 
     def do_cancel(self,arg):
+        """
+        cancel non commited changes, no arguments
+        """
         OperationHelper.request_cancel(self.server_url) 
 
     def do_modify(self,arg):
-        data_type, _uuid = arg
+        """
+        starts a modify command shell interface, usage:
+        modify <class_id> <_uuid>
+        """
+        argsp = arg.split(' ')
+        if not len(argsp) == 2 :
+            print("modify takes 2 parameters, usage :\n" 
+                + "modify <class_id> <_uuis>")
+        data_type, _uuid = argsp
         if data_type in ['note', 'task']:
             elem_modifier = ElementModifier(data_type, self.tmp_files, _uuid, self.server_url)
             elem_modifier.prompt = self.prompt[:-1] + 'modify_'+ '\u039E' + " "
@@ -288,9 +314,32 @@ class CommandLineClient(cmd.Cmd):
             print("Known data types are "+' '.join(['note','task']))
 
     def do_commit(self, class_id):
-        OperationHelper.request_commit(self.server_url, class_id)
+        """
+        commit changes on DB and save it, usage : 
+        commit <class_id>
+        """
+        if not class_id in DATA_TYPE_MAPPING:
+            print("No implemented class_id provided : {0}, expected {1}".format(class_id, list(DATA_TYPE_MAPPING.keys())))
+        else :
+            OperationHelper.request_commit(self.server_url, class_id)
+
+    def do_delete(self, arg):
+        """
+        delete element, usage :
+        delete <class_id> <_uuid>
+        """
+        argsp = arg.split(' ')
+        if not len(argsp) == 2 :
+            print("modify takes 2 parameters, usage :\n" 
+                + "delete <class_id> <_uuis>")
+        data_type, _uuid = argsp
+        OperationHelper.request_delete(self.server_url, data_type, _uuid)
 
     def do_purge(self, arg):
+        """
+        purge everything on DB 
+        no arguments
+        """
         answer = None
         while answer not in ["Y","n"] :
             answer = input("Are you sure you want to purge everything ? Y/n")

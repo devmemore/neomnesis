@@ -1,4 +1,6 @@
 * develop and test packaging with tar archive, compress and cypher to save it, imagine a system to keep key safely
 * make a docker container that work [not urgent]
 * make a graph db to link notes and tasks
+* problem invalid literal for int() with base 10: '9m30'
+
 
