@@ -4,9 +4,6 @@ import unittest
 import pandas as pd
 
 local_dir = os.path.dirname(__file__)
-#sys.path.append(os.path.join(local_dir,'..','..','..'))
-#sys.path.append(os.path.join(local_dir,'..','..'))
-#sys.path.append(os.path.join(local_dir,'..'))
 
 from neomnesis.task.task import Task, TaskDB, TASK_TABLE, DATETIME_FORMAT, DateHour
 import neomnesis.server.config.config as config

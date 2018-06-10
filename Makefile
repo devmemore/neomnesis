@@ -27,6 +27,9 @@ unittest: env_local
 test: env_local
 	./env_local/bin/tox
 
+testSync: env_local
+	./env_local/bin/python -m unittest neomnesis/sync/test/test_mkarchive.py
+
 devCmdLineClient:
 ifeq ($(ENV), "")
 	$(error Usage: make <command> ENV=(local|dev|prod))
