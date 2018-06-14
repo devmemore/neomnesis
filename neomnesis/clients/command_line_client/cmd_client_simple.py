@@ -70,7 +70,7 @@ def edit_in_nvim(wkdirectory, initializer):
     tmp_file = tempfile.NamedTemporaryFile(prefix='tmp_element_building',dir=wkdirectory,delete=False)
     initializer(tmp_file.name)
     #call(['gnome-terminal --full-screen -x nvim --listen {1} {0}'.format(tmp_file, self.socket_url)], shell=True)
-    current_time = time.time()
+    current_time = time.time)
     os.system('gnome-terminal --full-screen -x nvim {0}'.format(
         os.path.join(wkdirectory,tmp_file.name))
         )
@@ -288,6 +288,22 @@ class CommandLineClient(cmd.Cmd):
         result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
         result = pd.read_json(result_json.text)
         print(result.to_string())
+
+    def do_show(self,args):
+        """
+        Show entire field (Use full for text field)
+        show <class_id> <_uuid> <fieldname>
+        """
+        argsp = args.split(' ')
+        if not len(argsp) == 3 :
+            print("usage : show <class_id> <_uuid> <fieldname>")
+            continue
+        class_id, _uuid, fieldname = argsp
+        select_statement = "select {0} from {1} where _uuid = '{2}'".format(class_id,_uuid,fieldname)
+        result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
+        print(result_json.iloc[0][fieldname])
+
+
 
     def do_cancel(self,arg):
         """
