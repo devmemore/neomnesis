@@ -55,6 +55,10 @@ ifeq ($(ENV), "")
 endif
 	bash ./scripts/start_cmd_line_client_application.sh ${ENV}
 
+startLocalApplication:
+	bash ./scripts/start_application.sh local > server_logs 2>&1 & 
+	bash ./scripts/start_cmd_line_client_application.sh local &
+
 uninstall:
 	rm -r ~/.neomnesis
 
