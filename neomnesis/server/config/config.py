@@ -26,3 +26,6 @@ class NeoMnesisConfig:
 
     def get_domain(self):
         return self.cfg_parser.get('main','domain')
+
+    def get_neomnesis_root_folder(self):
+        return self.all_path_prefix

@@ -94,5 +94,6 @@ class TaskDB(PandasSQLDB):
     def insert_row(self, title, description, priority: int, due_date: datetime = None):
         task = Task.new(title, description, priority, due_date)
         self.data_frame = self.data_frame.append(pd.DataFrame([task.to_row()], columns=list(Task.columns.keys())))
-        self.data_frame.to_sql(self.db_file, self.conn, index=False, if_exists="replace")
+        with self.create_cursor() as conn :
+            self.data_frame.to_sql(self.db_file, conn, index=False, if_exists="replace")
         self.commit_to_tmp()

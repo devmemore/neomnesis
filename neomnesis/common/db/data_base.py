@@ -24,22 +24,27 @@ class PandasSQLDB:
         self.tmp_db_file = self.cfg.get_tmp_db_filename(app_name)
         if not os.path.exists(os.path.dirname(self.db_file)):
             os.makedirs(os.path.dirname(self.db_file))
-        conn = sqlite3.connect(self.db_file)
-        tmp_conn = sqlite3.connect(self.tmp_db_file)
         sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[class_obj.columns[col]], class_obj.columns)))
-        conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (table_name,sqlite_cols))
-        tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (table_name,sqlite_cols))
-        self.conn = conn
-        self.tmp_conn = tmp_conn
-        self.data_frame = pd.read_sql_query("SELECT * FROM %s" % table_name, conn, index_col=None)
-        self.data_frame.to_sql(table_name,self.tmp_conn, if_exists="replace")
+        with sqlite3.connect(self.db_file,check_same_thread=False) as conn : 
+            conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (table_name,sqlite_cols))
+            self.data_frame = pd.read_sql_query("SELECT * FROM %s" % table_name, conn, index_col=None)
+        with sqlite3.connect(self.tmp_db_file,check_same_thread=False) as tmp_conn :
+            tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (table_name,sqlite_cols))
+            self.data_frame.to_sql(table_name, tmp_conn, if_exists="replace")
+
+    def create_tmp_cursor(self):
+        return sqlite3.connect(self.tmp_db_file,check_same_thread=False)
+
+    def create_cursor(self):
+        return sqlite3.connect(self.db_file,check_same_thread=False)
 
     def commit_to_tmp(self):
         """
         commit changes to a tmp object table
         :return: None
         """
-        self.data_frame.to_sql(self.table_name, self.tmp_conn, if_exists="replace")
+        with self.create_tmp_cursor() as tmp_conn :
+            self.data_frame.to_sql(self.table_name, tmp_conn, if_exists="replace")
 
     def insert(self,obj : Element):
         """
@@ -75,7 +80,8 @@ class PandasSQLDB:
         self.commit_to_tmp()
 
     def commit(self,):
-        self.data_frame.to_sql(self.table_name, self.conn, if_exists="replace", index=False)
+        with self.create_cursor() as conn :
+            self.data_frame.to_sql(self.table_name, conn, if_exists="replace", index=False)
 
     def purge(self):
         self.data_frame = pd.DataFrame([], columns=list(self.class_obj.columns.keys()))
@@ -94,8 +100,9 @@ class PandasSQLDB:
         """
         if has_no_modification_statement(select_statement):
             try :
-                df_result = pd.read_sql_query(select_statement,self.tmp_conn)
-                return df_result
+                with self.create_tmp_cursor() as tmp_conn :
+                    df_result = pd.read_sql_query(select_statement,tmp_conn)
+                    return df_result
             except Exception as e :
                 return pd.DataFrame([{'result' : str(e)}])
         else :
@@ -103,5 +110,6 @@ class PandasSQLDB:
 
 
     def rebase(self):
-        self.data_frame = pd.read_sql_query("select * from {0}".format(self.table_name), self.conn)
+        with self.create_cursor() as conn :
+            self.data_frame = pd.read_sql_query("select * from {0}".format(self.table_name), conn)
         self.commit_to_tmp()
