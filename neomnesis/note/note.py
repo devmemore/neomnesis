@@ -50,7 +50,7 @@ class Note(Element,object):
 class NoteDB(PandasSQLDB):
 
     def __init__(self, cfg : NeoMnesisConfig):
-        PandasSQLDB.__init__(self,cfg, APP_NAME, NOTE_TABLE, Note)
+        PandasSQLDB.__init__(self,cfg, NOTE_TABLE, Note)
 
         self.db_file = self.cfg.get_db_filename(APP_NAME)
         self.tmp_db_file = self.cfg.get_tmp_db_filename(APP_NAME)
@@ -59,9 +59,9 @@ class NoteDB(PandasSQLDB):
         conn = sqlite3.connect(self.db_file)
         tmp_conn = sqlite3.connect(self.tmp_db_file)
         sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[Note.columns[col]], Note.columns)))
-        conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE,sqlite_cols))
+        conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
         conn.commit()
-        tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE,sqlite_cols))
+        tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
         tmp_conn.commit()
         self.conn = conn
         self.tmp_conn = tmp_conn

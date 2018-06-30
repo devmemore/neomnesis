@@ -23,14 +23,10 @@ from neomnesis.clients.common.operation_helper import OperationHelper
 
 from typing import Dict
 
-
 LOCAL_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(LOCAL_DIR, 'cmd_client_config_local.cfg')
 
 DATA_TYPE_MAPPING = {"note": Note, "task": Task}
-
-
-
 
 def get_editor_pid(starting_time):
     """
@@ -56,6 +52,16 @@ def get_editor_pid(starting_time):
         nvim_process = sorted(nvim_candidate_processes,key=lambda p : - p.create_time())[0]
     return nvim_process
 
+def view_in_nvim(wkdirectory, initializer):
+    tmp_file = tempfile.NamedTemporaryFile(prefix='tmp_element_building',dir=wkdirectory,delete=False)
+    initializer(tmp_file.name)
+    current_time = time.time()
+    os.system('gnome-terminal --full-screen -x nvim -R {0}'.format(
+        os.path.join(wkdirectory,tmp_file.name))
+    )
+    nvim_process = get_editor_pid(current_time)
+    nvim_process.wait()
+
 
 def edit_in_nvim(wkdirectory, initializer):
     """
@@ -79,7 +85,6 @@ def edit_in_nvim(wkdirectory, initializer):
     nvim_process.wait()
     with open(os.path.join(wkdirectory,tmp_file.name),'r') as f :
         return f.read()
-    return None 
 
 def initialize_file(content,filename):
     with open(filename,'w') as f : 
@@ -92,7 +97,7 @@ class ElementModifier(cmd.Cmd):
         cmd.Cmd.__init__(self)
         if not data_type in DATA_TYPE_MAPPING.keys():
             print("data_type must be in {0}".format(list(DATA_TYPE_MAPPING.keys())))
-            return None
+            pass
         self.class_id = data_type
         self.data_type = DATA_TYPE_MAPPING[data_type]
         self._uuid = _uuid

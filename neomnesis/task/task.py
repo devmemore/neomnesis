@@ -89,7 +89,7 @@ def has_no_modification_statement(statement: str):
 class TaskDB(PandasSQLDB):
 
     def __init__(self, cfg: NeoMnesisConfig):
-        PandasSQLDB.__init__(self, cfg, APP_NAME, TASK_TABLE, Task)
+        PandasSQLDB.__init__(self, cfg, TASK_TABLE, Task)
 
     def insert_row(self, title, description, priority: int, due_date: datetime = None):
         task = Task.new(title, description, priority, due_date)
