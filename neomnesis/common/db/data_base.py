@@ -13,15 +13,18 @@ from neomnesis.server.config.config import NeoMnesisConfig
 def has_no_modification_statement( statement : str ):
     return not any(list(map(lambda x : x in statement.upper(),['ALTER','DROP', 'INSERT', 'CREATE'])))
 
+
+DATA_BASE='neomnesis.db'
+
+
 class PandasSQLDB:
 
-    def __init__(self, cfg : NeoMnesisConfig, app_name : str, table_name: str, class_obj):
+    def __init__(self, cfg : NeoMnesisConfig, table_name: str, class_obj):
         self.cfg = cfg
-        self.app_name = app_name
         self.table_name = table_name
         self.class_obj = class_obj
-        self.db_file = self.cfg.get_db_filename(app_name)
-        self.tmp_db_file = self.cfg.get_tmp_db_filename(app_name)
+        self.db_file = self.cfg.get_db_filename(DATA_BASE)
+        self.tmp_db_file = self.cfg.get_tmp_db_filename(DATA_BASE)
         if not os.path.exists(os.path.dirname(self.db_file)):
             os.makedirs(os.path.dirname(self.db_file))
         sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[class_obj.columns[col]], class_obj.columns)))
