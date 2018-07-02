@@ -116,4 +116,5 @@ def purge():
     return 'OK'
 
 if __name__ == '__main__' :
-    app.run()
+    #TODO : redifine it
+    app.run(host='0.0.0.0', port=9876)
