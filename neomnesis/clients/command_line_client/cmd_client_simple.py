@@ -290,9 +290,10 @@ class CommandLineClient(cmd.Cmd):
         performs a query using sql query statement
         
         """
-        result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
-        result = pd.read_json(result_json.text)
-        print(result.to_string())
+        result_response = OperationHelper.request_select_statement(self.server_url, select_statement)
+        if result_response.status_code == 200 :
+            result = pd.read_json(result_response.text)
+            print(result.to_string())
 
     def do_show(self,args):
         """
@@ -303,16 +304,17 @@ class CommandLineClient(cmd.Cmd):
         if not len(argsp) == 3 :
             print("usage : show <class_id> <_uuid> <fieldname>")
             pass
-        if not argsp[0] in ['note','task']:
+        elif not argsp[0] in ['note','task']:
             print("usage : show <class_id> <_uuid> <fieldname>")
             pass
-        class_id, _uuid, fieldname = argsp
-        select_statement = "select {0} from {1}s where _uuid = '{2}'".format( fieldname, class_id, _uuid)
-        print(select_statement)
-        result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
-        df_result = pd.read_json(result_json.text)
-        print(df_result)
-        print(df_result.iloc[0][fieldname])
+        else :
+            class_id, _uuid, fieldname = argsp
+            select_statement = "select {0} from {1}s where _uuid = '{2}'".format( fieldname, class_id, _uuid)
+            print(select_statement)
+            result_json = OperationHelper.request_select_statement(self.server_url, select_statement)
+            df_result = pd.read_json(result_json.text)
+            print(df_result)
+            print(df_result.iloc[0][fieldname])
 
 
 
