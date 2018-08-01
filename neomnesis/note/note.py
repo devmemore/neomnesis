@@ -51,20 +51,19 @@ class NoteDB(PandasSQLDB):
 
     def __init__(self, cfg : NeoMnesisConfig):
         PandasSQLDB.__init__(self,cfg, NOTE_TABLE, Note)
-
-        self.db_file = self.cfg.get_db_filename(APP_NAME)
-        self.tmp_db_file = self.cfg.get_tmp_db_filename(APP_NAME)
-        if not os.path.exists(os.path.dirname(self.db_file)):
-            os.makedirs(os.path.dirname(self.db_file))
-        conn = sqlite3.connect(self.db_file)
-        tmp_conn = sqlite3.connect(self.tmp_db_file)
-        sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[Note.columns[col]], Note.columns)))
-        conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
-        conn.commit()
-        tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
-        tmp_conn.commit()
-        self.conn = conn
-        self.tmp_conn = tmp_conn
-        self.data_frame = pd.read_sql_query("SELECT * FROM %s" % NOTE_TABLE, conn, index_col=None)
-        self.data_frame.to_sql(NOTE_TABLE,self.tmp_conn, if_exists="replace")
+        #self.db_file = self.cfg.get_db_filename(APP_NAME)
+        #self.tmp_db_file = self.cfg.get_tmp_db_filename(APP_NAME)
+        #if not os.path.exists(os.path.dirname(self.db_file)):
+        #    os.makedirs(os.path.dirname(self.db_file))
+        #conn = sqlite3.connect(self.db_file)
+        #tmp_conn = sqlite3.connect(self.tmp_db_file)
+        #sqlite_cols = ', '.join(list(map(lambda col : col+' '+SQLITE_TYPE_MAPPING[Note.columns[col]], Note.columns)))
+        #conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
+        #conn.commit()
+        #tmp_conn.execute("CREATE TABLE IF NOT EXISTS %s (%s)" % (NOTE_TABLE, sqlite_cols))
+        #tmp_conn.commit()
+        #self.conn = conn
+        #self.tmp_conn = tmp_conn
+        #self.data_frame = pd.read_sql_query("SELECT * FROM %s" % NOTE_TABLE, conn, index_col=None)
+        #self.data_frame.to_sql(NOTE_TABLE,self.tmp_conn, if_exists="replace")
 

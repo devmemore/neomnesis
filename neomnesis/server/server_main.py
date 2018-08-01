@@ -115,5 +115,11 @@ def purge():
     ndb.purge()
     return 'OK'
 
+@app.route('/bind_<class_id>', methods=['POST'])
+def bind():
+    return 'NO'
+
+
+
 if __name__ == '__main__' :
     app.run()
